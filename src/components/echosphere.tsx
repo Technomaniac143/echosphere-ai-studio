@@ -334,8 +334,23 @@ export function InterviewPage() {
           {paused&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/60 backdrop-blur-sm"><div className="text-center text-white"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className={cn(violetButton,"mt-5 rounded-full")}><Play/> Resume interview</Button></div></div>}
         </div>
         <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-foreground/10 bg-card py-5 text-lg font-medium shadow-sm">
-          EchoSphere AI is listening…
+          {agents[activeAgent]!.name} is {paused?"paused":"listening"}…
           <span className="flex items-end gap-[3px]">{[.5,.9,.6,1,.45].map((h,i)=><i key={i} className="echo-wave w-[3px] rounded-full bg-brand" style={{height:`${h*20}px`,animationDelay:`${i*90}ms`}}/>)}</span>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-foreground/10 bg-card shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-foreground/10 px-4 py-3">
+            <span className="flex items-center gap-2 text-sm font-semibold"><PanelRight className="size-4 text-brand"/> Candidate tools</span>
+            <div className="flex gap-2">
+              {([["Code",Code2],["Whiteboard",PenTool]] as const).map(([label,I])=>
+                <Button key={label} size="sm" variant={tool===label?"default":"outline"} onClick={()=>setTool(tool===label?"none":label)} className={tool===label?violetButton:outlineButton}><I/> {label}{tool===label?" ✕":""}</Button>)}
+            </div>
+          </div>
+          {tool==="none"
+            ? <p className="px-4 py-6 text-center text-sm text-muted-foreground">Open the code editor for technical questions, or the whiteboard to sketch an architecture.</p>
+            : <Suspense fallback={<div className="grid h-72 place-items-center text-sm text-muted-foreground">Loading {tool.toLowerCase()}…</div>}>
+                {tool==="Code"?<CodeEditorPanel/>:<WhiteboardPanel/>}
+              </Suspense>}
         </div>
       </section>
 
