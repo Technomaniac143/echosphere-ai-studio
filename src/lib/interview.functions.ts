@@ -84,7 +84,7 @@ export const saveInterviewResults = createServerFn({ method: "POST" })
         cumulative_score: data.cumulative,
         status: "completed",
       } as any)
-      .eq("id", data.id)
+      .eq("id", data.threadId)
       .eq("user_id", context.userId);
     if (error) throw error;
     return { ok: true };
