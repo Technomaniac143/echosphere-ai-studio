@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight, ArrowUpRight, Award, BarChart3, BookOpen, BriefcaseBusiness, Camera,
   Check, CheckCircle2, ChevronRight, CirclePause, Clock3, Download, FileText,
@@ -7,6 +7,7 @@ import {
   Mic, MicOff, MonitorUp, MoreHorizontal, Network, NotebookPen, Pause, Play, Plus,
   Radio, RefreshCw, Route, Send, ShieldCheck, Sparkles, Target, Upload, UserRound,
   Video, VideoOff, Volume2, WandSparkles, X, Zap,
+  Aperture, Code2, PenTool, Eye, TrendingUp, PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
@@ -14,6 +15,13 @@ import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, Pro
 import alexImage from "@/assets/interviewer-alex.jpg";
 import candidateImage from "@/assets/candidate-arjun.jpg";
 import { cn } from "@/lib/utils";
+import { useCandidate } from "@/lib/candidate-store";
+import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
+import { AgentPanel, agents, useAgentRotation } from "@/components/echosphere/agent-panel";
+import { useProctoring } from "@/components/echosphere/use-proctoring";
+
+const CodeEditorPanel = lazy(() => import("@/components/echosphere/code-editor"));
+const WhiteboardPanel = lazy(() => import("@/components/echosphere/whiteboard"));
 
 type EchoMode = "idle" | "listening" | "thinking" | "speaking";
 
@@ -87,7 +95,7 @@ export function LandingPage() {
         <div className="mt-12 flex items-center gap-5 border-t border-foreground/15 pt-5 text-xs text-muted-foreground"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-brand" /> Encrypted voice & identity</span><span className="flex items-center gap-2"><Zap className="size-4 text-brand" /> Adaptive in real time</span></div>
       </div>
       <div className="relative min-h-[560px] overflow-hidden bg-brand p-6 text-white md:p-10">
-        <div className="absolute -right-20 top-10 size-72 rounded-full border border-white/15" /><div className="absolute -right-2 top-28 size-48 rounded-full border border-highlight/40" />
+        <HeroPanelAnimation />
         <div className="relative mx-auto flex h-full max-w-xl flex-col justify-center">
           <div className="mb-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-white/65"><span>Live adaptive panel</span><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-highlight" /> Listening</span></div>
           <div className="border border-white/20 bg-[#20192a]/90 p-5 shadow-[10px_10px_0_#f2dc47] md:p-7">
@@ -114,17 +122,79 @@ export function PortalPage() {
 }
 
 const competencies = [["Technical",84],["Problem Solving",78],["Communication",86],["Product Thinking",61],["Leadership",75],["Behavioral",82],["Adaptability",79]] as const;
-const sessions = [
-  {state:"IN PROGRESS",company:"Google",role:"Senior Software Engineer",date:"Today",score:"—",action:"Resume"},
-  {state:"COMPLETED",company:"Amazon",role:"Backend Engineer",date:"May 18, 2025",score:"82",action:"View Report"},
-  {state:"SCHEDULED",company:"Microsoft",role:"Staff Software Engineer",date:"May 28, 2025",score:"—",action:"Details"},
-];
 export function DashboardPage() {
+  const { candidate, cumulative, previousCumulative } = useCandidate();
+  const delta = previousCumulative === null ? null : cumulative - previousCumulative;
+  const best = Math.max(...candidate.history.map(h => h.cumulative));
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-7xl px-5 py-10 md:px-10">
-    <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end"><div><Eyebrow>Candidate workspace</Eyebrow><h1 className="text-4xl font-semibold tracking-[-.04em] md:text-6xl">Welcome back, <span className="text-brand">Arjun.</span></h1><p className="mt-2 text-muted-foreground">arjun.sharma@example.com</p></div><div className="flex flex-wrap gap-2"><Link to="/setup"><Button className={violetButton}><Plus/> Start New Mock Interview</Button></Link>{[[UserRound,"View Profile","/profile"],[FileText,"Reports","/report"],[Route,"Roadmap","/roadmap"]].map(([I,t,to]:any)=><Link key={t} to={to}><Button variant="outline" className={outlineButton}><I/>{t}</Button></Link>)}</div></div>
-    <section className="mt-10 grid border border-foreground/15 bg-white sm:grid-cols-2 lg:grid-cols-4">{[[Clock3,"Upcoming","1"],[CheckCircle2,"Completed","7"],[Award,"Average score","78"],[UserRound,"Profile","88%"]].map(([I,l,v]:any)=><div key={l} className="border-b border-foreground/15 p-5 last:border-0 sm:border-r lg:border-b-0"><div className="flex justify-between text-muted-foreground"><span className="font-mono text-[10px] uppercase tracking-widest">{l}</span><I className="size-4"/></div><p className="mt-8 text-4xl font-semibold">{v}</p></div>)}</section>
-    <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_.6fr]"><section><div className="mb-4 flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Interview history</p><h2 className="mt-1 text-2xl font-semibold">Your sessions</h2></div><span className="text-xs text-muted-foreground">3 recent</span></div><div className="border-t border-foreground/20">{sessions.map((s,i)=><article key={s.company} className="grid items-center gap-4 border-b border-foreground/15 bg-white p-5 md:grid-cols-[36px_1fr_120px_80px_120px]"><span className="font-mono text-xs text-muted-foreground">0{i+1}</span><div><span className={cn("font-mono text-[9px] tracking-widest",s.state==="COMPLETED"?"text-success":s.state==="IN PROGRESS"?"text-brand":"text-muted-foreground")}>● {s.state}</span><h3 className="mt-1 font-semibold">{s.company} · {s.role}</h3></div><p className="text-xs text-muted-foreground">{s.date}</p><p className="text-2xl font-semibold">{s.score}</p><Link to={(s.action==="Resume"?"/interview/demo":s.action==="View Report"?"/report":"/setup") as any}><Button variant="outline" size="sm" className={outlineButton}>{s.action}</Button></Link></article>)}</div></section>
-      <aside className="space-y-5"><div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile completion</h2><span className="font-mono text-sm text-brand">88%</span></div><div className="mt-4 h-2 bg-muted"><div className="h-full w-[88%] bg-highlight"/></div><Link to="/profile" className="mt-3 inline-flex items-center text-xs text-brand">Complete profile <ChevronRight className="size-3"/></Link></div><div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{competencies.map(([c,v])=><div key={c}><div className="mb-1 flex justify-between text-xs"><span>{c}</span><b>{v}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div><div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">6 of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">Next: connect technical decisions to customer impact.</p></div></aside></div>
+
+    <section className={cn(panel,"overflow-hidden")}>
+      <div className="grid gap-8 p-7 md:grid-cols-[auto_1fr_auto] md:items-center md:p-9">
+        <div className="relative size-28 overflow-hidden rounded-full border-4 border-brand bg-muted shadow-[6px_6px_0_#f2dc47]">
+          {candidate.photo
+            ? <img src={candidate.photo} alt={`${candidate.name} profile photo`} className="size-full object-cover"/>
+            : <span className="grid size-full place-items-center text-3xl font-semibold text-brand">{candidate.name.split(" ").map(w=>w[0]).join("")}</span>}
+        </div>
+        <div>
+          <Eyebrow>Candidate portfolio</Eyebrow>
+          <h1 className="text-4xl font-semibold tracking-[-.04em] md:text-5xl">{candidate.name}</h1>
+          <p className="mt-2 text-muted-foreground">{candidate.email} · Backend Engineer track</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="border border-foreground/15 bg-muted px-3 py-1.5">{candidate.history.length} interviews completed</span>
+            <span className="border border-foreground/15 bg-muted px-3 py-1.5">Best score {best}</span>
+            {!candidate.photo&&<Link to="/system-check" className="border border-brand px-3 py-1.5 text-brand">Add your photo</Link>}
+          </div>
+        </div>
+        <div className="bg-brand p-6 text-center text-white">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Cumulative score</p>
+          <p className="mt-2 text-7xl font-semibold leading-none">{cumulative}</p>
+          {delta!==null&&<p className="mt-3 flex items-center justify-center gap-1 text-xs text-white/85"><TrendingUp className="size-3"/> {delta>=0?`+${delta}`:delta} vs previous</p>}
+        </div>
+      </div>
+    </section>
+
+    <div className="mt-6 flex flex-wrap gap-2">
+      <Link to="/setup"><Button className={violetButton}><Plus/> Start New Mock Interview</Button></Link>
+      {[[UserRound,"View Profile","/profile"],[FileText,"Reports","/report"],[Route,"Roadmap","/roadmap"]].map(([I,t,to]:any)=><Link key={t} to={to}><Button variant="outline" className={outlineButton}><I/>{t}</Button></Link>)}
+    </div>
+
+    <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_.5fr]">
+      <section>
+        <div className="mb-5 flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Interview history</p><h2 className="mt-1 text-2xl font-semibold">Completed interviews</h2></div><span className="text-xs text-muted-foreground">{candidate.history.length} records</span></div>
+        <div className="grid gap-5 md:grid-cols-2">
+          {candidate.history.map(record=><article key={record.id} className={cn(panel,"flex flex-col p-5")}>
+            <div className="flex items-start gap-3">
+              <span className="size-11 shrink-0 overflow-hidden rounded-full border border-foreground/15 bg-muted">
+                {record.photo
+                  ? <img src={record.photo} alt="" className="size-full object-cover"/>
+                  : <span className="grid size-full place-items-center text-xs font-semibold text-brand">{candidate.name.split(" ").map(w=>w[0]).join("")}</span>}
+              </span>
+              <div className="flex-1">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-brand">{record.domain}</p>
+                <h3 className="mt-1 font-semibold leading-5">{record.company} · {record.role}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{record.date}</p>
+              </div>
+              <div className="text-right"><p className="text-3xl font-semibold leading-none">{record.cumulative}</p><p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Cumulative</p></div>
+            </div>
+            <div className="mt-5 grid gap-2">
+              {record.competencies.map(c=><div key={c.name}>
+                <div className="flex justify-between text-[11px]"><span className="text-muted-foreground">{c.name}</span><b>{c.score}</b></div>
+                <div className="mt-1 h-1.5 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
+              </div>)}
+            </div>
+            <div className="mt-5 flex gap-2 border-t border-foreground/10 pt-4">
+              <Link to="/report"><Button size="sm" variant="outline" className={outlineButton}>View Report</Button></Link>
+              <Link to="/setup"><Button size="sm" variant="ghost">Practice again</Button></Link>
+            </div>
+          </article>)}
+        </div>
+      </section>
+      <aside className="space-y-5">
+        <div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile completion</h2><span className="font-mono text-sm text-brand">{candidate.photo?"96%":"88%"}</span></div><div className="mt-4 h-2 bg-muted"><div className="h-full bg-highlight" style={{width:candidate.photo?"96%":"88%"}}/></div><Link to="/profile" className="mt-3 inline-flex items-center text-xs text-brand">Complete profile <ChevronRight className="size-3"/></Link></div>
+        <div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{competencies.map(([c,v])=><div key={c}><div className="mb-1 flex justify-between text-xs"><span>{c}</span><b>{v}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div>
+        <div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">6 of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">Next: connect technical decisions to customer impact.</p></div>
+      </aside>
+    </div>
   </div><EchoAssistant/></main>;
 }
 
@@ -157,6 +227,9 @@ function FormSection({number,title,icon,children}:{number:string;title:string;ic
 type CheckStatus="PASS"|"NOT ACTIVE"|"FAIL"|"CHECKING";
 export function SystemCheckPage() {
   const navigate=useNavigate(); const [statuses,setStatuses]=useState<CheckStatus[]>(["PASS","NOT ACTIVE","NOT ACTIVE","PASS"]); const [camera,setCamera]=useState(false); const video=useRef<HTMLVideoElement>(null);
+  const { candidate, setPhoto } = useCandidate();
+  const [draftPhoto,setDraftPhoto]=useState<string|null>(null);
+  function capturePhoto(){const v=video.current;if(!v)return;const c=document.createElement("canvas");c.width=v.videoWidth||640;c.height=v.videoHeight||480;const ctx=c.getContext("2d");if(!ctx)return;ctx.drawImage(v,0,0,c.width,c.height);setDraftPhoto(c.toDataURL("image/jpeg",0.85));}
   async function enableCamera(){try{const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});if(video.current)video.current.srcObject=s;setCamera(true);setStatuses(p=>["PASS","PASS",p[2]!,"PASS"])}catch{setStatuses(p=>["FAIL","FAIL",p[2]!,"PASS"])}}
   function screen(){setStatuses(p=>[p[0]!,p[1]!,"CHECKING",p[3]!]);navigator.mediaDevices?.getDisplayMedia?.({video:true}).then(()=>setStatuses(p=>[p[0]!,p[1]!,"PASS",p[3]!])).catch(()=>setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]))}
   const ready=statuses[0]==="PASS"&&statuses[1]==="PASS"&&statuses[3]==="PASS";
@@ -165,7 +238,27 @@ export function SystemCheckPage() {
     <div className="mt-9 grid gap-4 md:grid-cols-2"><CheckCard icon={<Camera/>} n="01" title="Camera Access & Video Preview" status={statuses[0]!}><div className="relative aspect-video overflow-hidden bg-muted">{camera?<video ref={video} autoPlay muted className="size-full object-cover"/>:<div className="grid size-full place-items-center"><Button onClick={enableCamera} className={violetButton}><Camera/> Enable Camera & Microphone</Button></div>}</div></CheckCard>
     <CheckCard icon={<Mic/>} n="02" title="Microphone Access & Input Level" status={statuses[1]!}><div className="flex h-28 items-center gap-1 bg-muted px-8">{Array.from({length:28},(_,i)=><i key={i} className="w-1 bg-brand" style={{height:camera?`${18+(i*13)%62}%`:"8%"}}/>)}</div></CheckCard>
     <CheckCard icon={<MonitorUp/>} n="03" title="Screen Sharing Verification" status={statuses[2]!}><div className="flex h-28 items-center justify-between bg-muted px-5"><span className="text-sm text-muted-foreground">{statuses[2]==="PASS"?"Screen sharing verified":"Screen Sharing Not Started"}</span><Button onClick={screen} variant="outline" className={outlineButton}>Share Screen Now</Button></div></CheckCard>
-    <CheckCard icon={<Network/>} n="04" title="Real Network & Backend Health" status={statuses[3]!}><div className="grid h-28 grid-cols-2 place-items-center bg-muted"><div><p className="text-xs text-muted-foreground">Backend Reachable</p><b className="text-success">Yes</b></div><div><p className="text-xs text-muted-foreground">Latency</p><b>42 ms</b></div></div><button className="mt-3 flex items-center gap-2 text-xs text-brand"><RefreshCw className="size-3"/> Re-check Connectivity</button></CheckCard></div>
+    <CheckCard icon={<Network/>} n="04" title="Real Network & Backend Health" status={statuses[3]!}><div className="grid h-28 grid-cols-2 place-items-center bg-muted"><div><p className="text-xs text-muted-foreground">Backend Reachable</p><b className="text-success">Yes</b></div><div><p className="text-xs text-muted-foreground">Latency</p><b>42 ms</b></div></div><button className="mt-3 flex items-center gap-2 text-xs text-brand"><RefreshCw className="size-3"/> Re-check Connectivity</button></CheckCard>
+    <div className="md:col-span-2"><CheckCard icon={<Aperture/>} n="05" title="Candidate Profile Photo" status={candidate.photo?"PASS":"NOT ACTIVE"}>
+      <div className="grid gap-5 sm:grid-cols-[220px_1fr]">
+        <div className="grid aspect-square place-items-center overflow-hidden border border-foreground/15 bg-muted">
+          {(draftPhoto||candidate.photo)
+            ? <img src={(draftPhoto||candidate.photo)!} alt="Captured candidate photo" className="size-full object-cover"/>
+            : <div className="text-center text-xs text-muted-foreground"><Camera className="mx-auto mb-2 size-6 opacity-50"/>No photo yet</div>}
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Capture a still from your camera. This photo becomes your profile picture and is attached to each interview record.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {!draftPhoto
+              ? <Button onClick={capturePhoto} disabled={!camera} className={cn(violetButton,"disabled:shadow-none")}><Camera/> {candidate.photo?"Retake photo":"Capture photo"}</Button>
+              : <><Button onClick={()=>{setPhoto(draftPhoto);setDraftPhoto(null)}} className={violetButton}><Check/> Use this photo</Button>
+                 <Button onClick={()=>setDraftPhoto(null)} variant="outline" className={outlineButton}><RefreshCw/> Retake</Button></>}
+          </div>
+          {!camera&&<p className="mt-3 text-xs text-muted-foreground">Enable your camera above to capture a photo.</p>}
+          {candidate.photo&&!draftPhoto&&<p className="mt-3 flex items-center gap-2 text-xs text-success"><CheckCircle2 className="size-3"/> Saved to your profile.</p>}
+        </div>
+      </div>
+    </CheckCard></div></div>
     <div className="mt-8 flex justify-end"><Button disabled={!ready} onClick={()=>navigate({to:"/video-test"})} className={cn(violetButton,"disabled:shadow-none")}>Continue to Sample Video <ArrowRight/></Button></div></div></main>;
 }
 function CheckCard({n,title,status,icon,children}:{n:string;title:string;status:CheckStatus;icon:ReactNode;children:ReactNode}) { return <section className={cn(panel,"p-5")}><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3 text-sm font-semibold"><span className="font-mono text-[10px] text-muted-foreground">{n}</span><span className="text-brand">{icon}</span>{title}</div><Status status={status}/></div>{children}</section> }
@@ -192,6 +285,10 @@ export function InterviewPage() {
   const [video,setVideo]=useState(true);
   const [paused,setPaused]=useState(false);
   const [messages,setMessages]=useState<{from:"assistant"|"user";text:string}[]>([]);
+  const { candidate } = useCandidate();
+  const activeAgent = useAgentRotation(!paused, 5000);
+  const { videoRef, events, faceTracking, lookingAway } = useProctoring(!paused);
+  const [tool,setTool]=useState<"none"|"Code"|"Whiteboard">("none");
   function command(text:string){const q=text.toLowerCase();setMessages(m=>[...m,{from:"user",text}]);setEcho("thinking");window.setTimeout(()=>{let reply="I’m ready when you are.";if(q.includes("notes")){setWorkspace("Notes");reply="Opening your notes."}else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}else if(q.includes("pause")){setPaused(true);reply="Interview paused."}setMessages(m=>[...m,{from:"assistant",text:reply}]);setEcho("speaking");window.setTimeout(()=>setEcho("idle"),1800)},900)}
 
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground">
@@ -210,22 +307,36 @@ export function InterviewPage() {
     <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr_360px]">
       <aside className="h-fit rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-full bg-brand/10 text-lg font-bold text-brand">C</span>
+          <span className="grid size-11 place-items-center overflow-hidden rounded-full bg-brand/10 text-lg font-bold text-brand">{candidate.photo?<img src={candidate.photo} alt="" className="size-full object-cover"/>:candidate.name[0]}</span>
           <div><p className="font-semibold">Candidate</p><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"><CheckCircle2 className="size-3"/> Verified</span></div>
         </div>
         {[["ROLE","Software Engineer",Clock3],["LAST INTERVIEW","14 Mar 2026",Clock3],["TOTAL SESSIONS","5 completed",Clock3]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</p>
           <p className="mt-1 font-semibold">{v}</p>
         </div>)}
+        <div className="border-t border-foreground/10 pt-4">
+          <AgentPanel activeIndex={activeAgent}/>
+        </div>
+        <div className="mt-4 border-t border-foreground/10 pt-4">
+          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground"><Eye className="size-3"/> Integrity monitor</p>
+          <p className="mt-2 text-xs text-muted-foreground">{faceTracking?"Face tracking active · local only":"Face tracking unavailable — camera or model not loaded"}</p>
+          <div className="mt-3 space-y-1.5">
+            {events.length===0
+              ? <p className="text-xs text-success">No flags recorded.</p>
+              : events.slice(0,4).map(e=><p key={e.id} className="flex justify-between text-[11px]"><span className="text-red-500">{e.kind==="look-away"?"Looked away":"Left the window"}</span><span className="text-muted-foreground">{e.at}</span></p>)}
+          </div>
+        </div>
       </aside>
 
       <section>
         <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-[#0d1117] shadow-sm">
           <img src={alexImage} alt="Alex, AI technical interviewer" width={1280} height={720} className="aspect-video w-full object-cover"/>
           <span className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white"><i className="size-2 rounded-full bg-success"/> EchoSphere AI • LIVE</span>
-          <div className="absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 border-white/70 shadow-lg md:w-40">
-            <img src={candidateImage} alt="Candidate video preview" width={640} height={640} className="aspect-square w-full object-cover"/>
+          <div className={cn("absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 shadow-lg md:w-40",lookingAway?"border-red-500":"border-white/70")}>
+            <video ref={videoRef} muted playsInline className={cn("aspect-square w-full bg-black object-cover",(!faceTracking||!video)&&"hidden")}/>
+            {(!faceTracking||!video)&&<img src={candidate.photo??candidateImage} alt="Candidate video preview" className="aspect-square w-full object-cover"/>}
             <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">You</span>
+            {lookingAway&&<span className="absolute inset-x-0 top-0 bg-red-500 py-0.5 text-center text-[10px] font-semibold text-white">Pay attention</span>}
           </div>
           <div className="absolute inset-x-0 bottom-6 flex justify-center">
             <div className="flex items-center gap-3 rounded-full bg-[#111827]/90 px-3 py-2.5 shadow-xl backdrop-blur">
@@ -237,8 +348,23 @@ export function InterviewPage() {
           {paused&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/60 backdrop-blur-sm"><div className="text-center text-white"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className={cn(violetButton,"mt-5 rounded-full")}><Play/> Resume interview</Button></div></div>}
         </div>
         <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-foreground/10 bg-card py-5 text-lg font-medium shadow-sm">
-          EchoSphere AI is listening…
+          {agents[activeAgent]!.name} is {paused?"paused":"listening"}…
           <span className="flex items-end gap-[3px]">{[.5,.9,.6,1,.45].map((h,i)=><i key={i} className="echo-wave w-[3px] rounded-full bg-brand" style={{height:`${h*20}px`,animationDelay:`${i*90}ms`}}/>)}</span>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-foreground/10 bg-card shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-foreground/10 px-4 py-3">
+            <span className="flex items-center gap-2 text-sm font-semibold"><PanelRight className="size-4 text-brand"/> Candidate tools</span>
+            <div className="flex gap-2">
+              {([["Code",Code2],["Whiteboard",PenTool]] as const).map(([label,I])=>
+                <Button key={label} size="sm" variant={tool===label?"default":"outline"} onClick={()=>setTool(tool===label?"none":label)} className={tool===label?violetButton:outlineButton}><I/> {label}{tool===label?" ✕":""}</Button>)}
+            </div>
+          </div>
+          {tool==="none"
+            ? <p className="px-4 py-6 text-center text-sm text-muted-foreground">Open the code editor for technical questions, or the whiteboard to sketch an architecture.</p>
+            : <Suspense fallback={<div className="grid h-72 place-items-center text-sm text-muted-foreground">Loading {tool.toLowerCase()}…</div>}>
+                {tool==="Code"?<CodeEditorPanel/>:<WhiteboardPanel/>}
+              </Suspense>}
         </div>
       </section>
 
@@ -279,9 +405,23 @@ function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}
 
 export function ReportPage() {
   const navigate=useNavigate(); const panelScores=[["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
+  const { candidate, cumulative, previousCumulative } = useCandidate();
+  const latest = candidate.history[0];
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">Arjun Sharma · Backend Engineer at Amazon · May 18, 2025 · 52 min</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
-    <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Overall score</p><p className="mt-5 text-8xl font-semibold tracking-tight">82</p><p className="mt-2 text-sm">Strong Hire</p><div className="mt-12 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"].map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"].map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
-    <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Seven dimensions</p><h2 className="mt-2 text-3xl font-semibold">Competency profile</h2></div><p className="text-xs text-muted-foreground">Score / confidence / evidence</p></div><div className="mt-6 border-t border-foreground/20">{competencies.map(([n,v],i)=><article key={n} className="grid items-center gap-4 border-b border-foreground/15 bg-card px-5 py-5 md:grid-cols-[180px_1fr_70px_100px]"><div><h3 className="font-semibold">{n}</h3><p className="mt-1 text-[10px] text-muted-foreground">Confidence {87-i}%</p></div><div><div className="h-2 bg-muted"><div className={cn("h-full",v<70?"bg-highlight":"bg-brand")} style={{width:`${v}%`}}/></div><p className="mt-2 text-xs text-muted-foreground">{v>80?"Demonstrated clear structure and relevant depth.":v>70?"Consistent evidence with room for more precision.":"Needs stronger links between decisions and user outcomes."}</p></div><strong className="text-2xl">{v}</strong><Button size="sm" variant="outline" className={outlineButton}>View Evidence</Button></article>)}</div></section>
+    <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Cumulative score</p><p className="mt-5 text-8xl font-semibold tracking-tight">{cumulative}</p><p className="mt-2 text-sm">{cumulative>=80?"Strong Hire":cumulative>=70?"Hire":"Needs practice"}</p>{previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {cumulative-previousCumulative>=0?"+":""}{cumulative-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"].map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"].map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
+    <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Per-competency scoring</p><h2 className="mt-2 text-3xl font-semibold">Competency breakdown</h2></div><p className="text-xs text-muted-foreground">Each competency scored separately</p></div>
+      <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {(latest?.competencies ?? competencies.map(([name,score])=>({name,score}))).map((c,i)=>
+          <article key={c.name} className={cn(panel,"flex flex-col p-6")}>
+            <div className="flex items-start justify-between">
+              <div><h3 className="text-lg font-semibold">{c.name}</h3><p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Confidence {87-i}%</p></div>
+              <strong className={cn("text-5xl leading-none",c.score<70?"text-highlight-foreground":"text-brand")}>{c.score}</strong>
+            </div>
+            <div className="mt-5 h-2 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
+            <p className="mt-3 flex-1 text-xs leading-5 text-muted-foreground">{c.score>80?"Demonstrated clear structure and relevant depth.":c.score>70?"Consistent evidence with room for more precision.":"Needs stronger links between decisions and user outcomes."}</p>
+            <Button size="sm" variant="outline" className={cn(outlineButton,"mt-5 self-start")}>View Evidence</Button>
+          </article>)}
+      </div></section>
     <section className="mt-12 grid gap-8 lg:grid-cols-2"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Distinct perspectives</p><h2 className="mt-2 text-3xl font-semibold">Panel scores</h2><div className="mt-5 grid gap-3">{panelScores.map(([n,r,s]:any)=><div key={n} className="flex items-center gap-4 border border-foreground/15 bg-card p-4"><span className="grid size-10 place-items-center bg-brand text-white">{n[0]}</span><div className="flex-1"><b>{n}</b><p className="text-xs text-muted-foreground">{r}</p></div><strong className="text-2xl">{s}</strong></div>)}</div></div><div className="border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Zap className="text-brand"/><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Analytical signal</p><h2 className="mt-1 text-2xl font-semibold">Panel disagreement detected.</h2></div></div><p className="mt-5 text-sm leading-6 text-muted-foreground">Alex rated technical depth highly, while Maya found weaker evidence connecting implementation choices to customer impact. This is not inconsistency—it reveals distinct assessment dimensions.</p><div className="mt-7 grid grid-cols-2 gap-3"><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Technical view</span><b className="mt-2 block text-3xl">84</b></div><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Product view</span><b className="mt-2 block text-3xl text-brand">68</b></div></div></div></section>
     <section className="mt-12 border-t border-foreground/15 pt-9"><Eyebrow>Personalized roadmap</Eyebrow><h2 className="text-3xl font-semibold">Your improvement plan</h2><div className="mt-6 grid gap-px bg-foreground/10 md:grid-cols-4">{["Practice system-design tradeoffs.","Quantify project outcomes with metrics.","Connect technical decisions to customer impact.","Practice STAR-format behavioral responses."].map((x,i)=><div key={x} className="bg-card p-5"><span className="font-mono text-xs text-brand">0{i+1}</span><p className="mt-12 font-semibold leading-6">{x}</p><button className="mt-5 text-xs text-muted-foreground">Start practice <ArrowRight className="ml-1 inline size-3"/></button></div>)}</div></section>
   </div><EchoAssistant hint="Ask Echo to explain any score."/></main>;
