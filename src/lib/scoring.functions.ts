@@ -51,7 +51,7 @@ Transcript:
     const competencies = parsed.competencies ?? [];
     const overall = Math.round(parsed.overall ?? 0);
 
-    const { error } = await context.supabase
+    const { error } = await (context.supabase as any)
       .from("interview_threads")
       .update({
         cumulative_score: overall,

@@ -17,7 +17,7 @@ const defaultSteps = [
 export const getRoadmap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await (context.supabase as any)
+    const { data } = await ((context.supabase as any) as any)
       .from("roadmap_progress")
       .select("steps")
       .eq("user_id", context.userId)
@@ -32,7 +32,7 @@ export const updateRoadmapStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => input as { title: string; status: string })
   .handler(async ({ data, context }) => {
-    const { data: existing } = await (context.supabase as any)
+    const { data: existing } = await ((context.supabase as any) as any)
       .from("roadmap_progress")
       .select("id, steps")
       .eq("user_id", context.userId)
@@ -42,9 +42,9 @@ export const updateRoadmapStep = createServerFn({ method: "POST" })
       s.title === data.title ? { ...s, status: data.status } : s,
     );
     if (existing?.id) {
-      await (context.supabase as any).from("roadmap_progress").update({ steps: next }).eq("id", existing.id);
+      await ((context.supabase as any) as any).from("roadmap_progress").update({ steps: next }).eq("id", existing.id);
     } else {
-      await (context.supabase as any).from("roadmap_progress").insert({ user_id: context.userId, steps: next });
+      await ((context.supabase as any) as any).from("roadmap_progress").insert({ user_id: context.userId, steps: next });
     }
     return { ok: true };
   });
