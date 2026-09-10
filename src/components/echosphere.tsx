@@ -405,18 +405,32 @@ export function InterviewPage() {
   const finish = useServerFn(saveInterviewResults);
   const score = useServerFn(scoreInterview);
 
+  const [loadError,setLoadError]=useState<string|null>(null);
   useEffect(() => {
     if (!threadId) return;
-    getThread({ data: { threadId } }).then(t => {
-      if (!t) { navigate({ to: "/setup" }); return; }
-      setThread(t as any);
-      const transcript = (t as any).transcript || "";
-      const parsed = transcript.split("\n").filter(Boolean).map((line: string) => {
-        const m = line.match(/^\[(assistant|user)\]\s*(.*)$/);
-        return m ? { from: m[1] as "assistant"|"user", text: m[2] } : null;
-      }).filter(Boolean) as {from:"assistant"|"user";text:string}[];
-      setMessages(parsed);
-    }).catch(() => { navigate({ to: "/setup" }); });
+    let attempts = 0;
+    async function load() {
+      try {
+        const t = await getThread({ data: { threadId } });
+        if (!t) { navigate({ to: "/setup" }); return; }
+        setThread(t as any);
+        const transcript = (t as any).transcript || "";
+        const parsed = transcript.split("\n").filter(Boolean).map((line: string) => {
+          const m = line.match(/^\[(assistant|user)\]\s*(.*)$/);
+          return m ? { from: m[1] as "assistant"|"user", text: m[2] } : null;
+        }).filter(Boolean) as {from:"assistant"|"user";text:string}[];
+        setMessages(parsed);
+        setLoadError(null);
+      } catch (e: any) {
+        attempts++;
+        if (attempts < 3) {
+          window.setTimeout(load, 800);
+        } else {
+          setLoadError(e?.message || "Could not load this interview.");
+        }
+      }
+    }
+    load();
   }, [threadId, getThread, navigate]);
 
   async function command(text:string){
