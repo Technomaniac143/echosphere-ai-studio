@@ -19,6 +19,11 @@ Each person's own data, private to them:
 - Transcript and notes captured during an interview.
 - Roadmap progress.
 
+**Practice interview recording**
+- Add a toggle/option on the practice interview screen to record the session locally.
+- The recording is not uploaded or stored server-side; it stays in the browser.
+- Provide a download button so the candidate can save the file to their own device.
+
 **Replacing the mock data**
 - Profile page, dashboard, report and roadmap read from the saved data instead of the built-in sample values and browser storage.
 - New accounts start empty, with a friendly "no interviews yet" state rather than fake numbers.
