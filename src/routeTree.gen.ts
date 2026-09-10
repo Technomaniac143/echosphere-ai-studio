@@ -15,6 +15,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SystemCheckRouteImport } from './routes/system-check'
 import { Route as VideoTestRouteImport } from './routes/video-test'
@@ -50,6 +51,11 @@ const ReportRoute = ReportRouteImport.update({
   path: '/report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoadmapRoute = RoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
+  '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
   '/system-check': typeof SystemCheckRoute
   '/video-test': typeof VideoTestRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
+  '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
   '/system-check': typeof SystemCheckRoute
   '/video-test': typeof VideoTestRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/portal': typeof PortalRoute
   '/profile': typeof ProfileRoute
   '/report': typeof ReportRoute
+  '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
   '/system-check': typeof SystemCheckRoute
   '/video-test': typeof VideoTestRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/profile'
     | '/report'
+    | '/roadmap'
     | '/setup'
     | '/system-check'
     | '/video-test'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/profile'
     | '/report'
+    | '/roadmap'
     | '/setup'
     | '/system-check'
     | '/video-test'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/profile'
     | '/report'
+    | '/roadmap'
     | '/setup'
     | '/system-check'
     | '/video-test'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRoute
   ProfileRoute: typeof ProfileRoute
   ReportRoute: typeof ReportRoute
+  RoadmapRoute: typeof RoadmapRoute
   SetupRoute: typeof SetupRoute
   SystemCheckRoute: typeof SystemCheckRoute
   VideoTestRoute: typeof VideoTestRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/roadmap': {
+      id: '/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof RoadmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup': {
       id: '/setup'
       path: '/setup'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRoute,
   ProfileRoute: ProfileRoute,
   ReportRoute: ReportRoute,
+  RoadmapRoute: RoadmapRoute,
   SetupRoute: SetupRoute,
   SystemCheckRoute: SystemCheckRoute,
   VideoTestRoute: VideoTestRoute,
