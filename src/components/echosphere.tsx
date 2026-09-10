@@ -165,6 +165,9 @@ function FormSection({number,title,icon,children}:{number:string;title:string;ic
 type CheckStatus="PASS"|"NOT ACTIVE"|"FAIL"|"CHECKING";
 export function SystemCheckPage() {
   const navigate=useNavigate(); const [statuses,setStatuses]=useState<CheckStatus[]>(["PASS","NOT ACTIVE","NOT ACTIVE","PASS"]); const [camera,setCamera]=useState(false); const video=useRef<HTMLVideoElement>(null);
+  const { candidate, setPhoto } = useCandidate();
+  const [draftPhoto,setDraftPhoto]=useState<string|null>(null);
+  function capturePhoto(){const v=video.current;if(!v)return;const c=document.createElement("canvas");c.width=v.videoWidth||640;c.height=v.videoHeight||480;const ctx=c.getContext("2d");if(!ctx)return;ctx.drawImage(v,0,0,c.width,c.height);setDraftPhoto(c.toDataURL("image/jpeg",0.85));}
   async function enableCamera(){try{const s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});if(video.current)video.current.srcObject=s;setCamera(true);setStatuses(p=>["PASS","PASS",p[2]!,"PASS"])}catch{setStatuses(p=>["FAIL","FAIL",p[2]!,"PASS"])}}
   function screen(){setStatuses(p=>[p[0]!,p[1]!,"CHECKING",p[3]!]);navigator.mediaDevices?.getDisplayMedia?.({video:true}).then(()=>setStatuses(p=>[p[0]!,p[1]!,"PASS",p[3]!])).catch(()=>setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]))}
   const ready=statuses[0]==="PASS"&&statuses[1]==="PASS"&&statuses[3]==="PASS";
