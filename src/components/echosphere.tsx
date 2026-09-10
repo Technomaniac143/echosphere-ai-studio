@@ -182,27 +182,100 @@ export function AnalysisPage() {
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-12"><div className="text-center"><Eyebrow>Automated evaluation</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Candidate Analysis Portal</h1><div className="mx-auto mt-8 grid size-32 place-items-center rounded-full border-2 border-success bg-white shadow-[8px_8px_0_#bff3cf]"><div><Check className="mx-auto size-8 text-success"/><b className="mt-1 block font-mono text-xs text-success">APPROVED</b></div></div><h2 className="mt-5 text-2xl font-semibold">Ready for Interview</h2><p className="mt-2 text-muted-foreground">Environment, media integrity, and sample recording evaluation complete.</p></div><section className="mt-10 border-t border-foreground/20">{verifications.map(([I,t,d]:any,i)=><article key={t} className="grid items-center gap-4 border-b border-foreground/15 bg-white p-5 md:grid-cols-[38px_1fr_90px]"><I className="text-brand"/><div><h3 className="font-semibold">{t}</h3><p className="mt-1 text-sm text-muted-foreground">{d}</p></div><Status status="PASS"/></article>)}</section><div className="mt-9 flex justify-center"><Button onClick={()=>navigate({to:"/interview/$threadId", params:{threadId:"demo"}})} size="lg" className={violetButton}>Start Mock Interview <ArrowRight/></Button></div></div></main>;
 }
 
-type Workspace="Conversation"|"Transcript"|"Notes"|"Whiteboard"|"Summary";
+type Workspace="Conversation"|"Notes";
+const stages=["Verify","Technical","Product","Behavioral","Confirm"];
 export function InterviewPage() {
-  const navigate=useNavigate(); const [workspace,setWorkspace]=useState<Workspace>("Conversation"); const [drawer,setDrawer]=useState(true); const [echo,setEcho]=useState<EchoMode>("idle"); const [muted,setMuted]=useState(false); const [video,setVideo]=useState(true); const [paused,setPaused]=useState(false); const [messages,setMessages]=useState([{from:"assistant" as const,text:"Tell me about the highest-scale backend system you’ve owned."},{from:"user" as const,text:"I built a distributed order processing pipeline handling 20,000 events per second."},{from:"assistant" as const,text:"Good. How would you design that system to survive a full regional outage?"}]);
-  function command(text:string){const q=text.toLowerCase();setMessages(m=>[...m,{from:"user",text}]);setEcho("thinking");window.setTimeout(()=>{let reply="I’m ready when you are.";if(q.includes("whiteboard")){setWorkspace("Whiteboard");setDrawer(true);reply="Opening the whiteboard."}else if(q.includes("transcript")){setWorkspace("Transcript");setDrawer(true);reply="Showing the live transcript."}else if(q.includes("notes")){setWorkspace("Notes");setDrawer(true);reply="Opening your notes."}else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}else if(q.includes("pause")){setPaused(true);reply="Interview paused."}setMessages(m=>[...m,{from:"assistant",text:reply}]);setEcho("speaking");window.setTimeout(()=>setEcho("idle"),1800)},900)}
-  return <main className="h-screen overflow-hidden bg-[#120f16] text-white"><Header dark compact/><div className="flex h-[calc(100vh-56px)]">
-    <section className="relative min-w-0 flex-1 overflow-hidden"><img src={alexImage} alt="Alex, AI technical interviewer" width={1280} height={720} className="absolute inset-0 size-full object-cover opacity-85"/><div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,15,22,.7),transparent_25%,transparent_52%,rgba(18,15,22,.96))]"/>
-      <div className="absolute inset-x-0 top-0 flex items-center justify-between px-5 py-4"><div><div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-white/65"><span className="size-2 rounded-full bg-red-500"/> EchoSphere AI · Live</div><h2 className="mt-1 text-xl font-semibold">Alex <span className="text-sm font-normal text-white/50">· Technical Interviewer</span></h2></div><div className="flex gap-4 font-mono text-[10px] text-white/60"><span className="flex items-center gap-2"><Network className="size-3 text-success"/> Excellent</span><span className="flex items-center gap-2"><Radio className="size-3 text-red-400"/> REC</span><span>28:14</span></div></div>
-      <div className="absolute left-5 top-24 hidden gap-1 md:flex">{["Verify ✓","Technical","Product","Behavioral","Confirm"].map((x,i)=><span key={x} className={cn("border px-3 py-2 font-mono text-[9px] uppercase",i===1?"border-highlight bg-highlight text-black":i===0?"border-white/25 text-white/45":"border-white/10 text-white/30")}>{x}</span>)}</div>
-      <div className="absolute right-5 top-24 h-40 w-52 overflow-hidden border border-white/20 bg-black shadow-xl"><img src={candidateImage} alt="Arjun Sharma candidate video" width={640} height={640} className="size-full object-cover"/><span className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 text-[10px]">Arjun Sharma</span></div>
-      <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 md:px-10"><div className="mx-auto max-w-4xl"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-highlight">System design · Follow-up · Hard · Technical depth</p><h1 className="mt-3 max-w-3xl text-2xl font-medium leading-tight md:text-4xl">How would you design a globally distributed URL shortening service?</h1><div className="mt-5 flex items-center justify-between"><div className="flex items-center gap-2"><button onClick={()=>setMuted(!muted)} aria-label="Toggle microphone" className={cn("grid size-11 place-items-center rounded-full",muted?"bg-red-500":"bg-white text-black")}>{muted?<MicOff/>:<Mic/>}</button><button onClick={()=>setVideo(!video)} aria-label="Toggle camera" className="grid size-11 place-items-center rounded-full bg-white/10">{video?<Video/>:<VideoOff/>}</button><button className="grid size-11 place-items-center rounded-full bg-white/10"><MonitorUp/></button><button className="grid size-11 place-items-center rounded-full bg-white/10"><MoreHorizontal/></button></div><button onClick={()=>navigate({to:"/report"})} className="border border-red-400/60 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-300">End Interview</button></div></div></div>
-      {paused&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/65 backdrop-blur-sm"><div className="text-center"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className="mt-5 rounded-none bg-highlight text-black hover:bg-white"><Play/> Resume interview</Button></div></div>}
-      <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 translate-y-1/2 md:bottom-5"><EchoOrb mode={echo} onClick={()=>setEcho(echo==="idle"?"listening":"idle")}/><span className="mt-1 block text-center font-mono text-[9px] uppercase text-white/60">{echo==="idle"?"Hey Echo":echo==="listening"?"Listening…":echo==="thinking"?"Thinking…":"Speaking"}</span></div>
-    </section>
-    {drawer&&<aside className="absolute inset-y-14 right-0 z-30 flex w-full flex-col border-l border-white/10 bg-[#1b1720] shadow-2xl md:relative md:inset-y-0 md:w-[390px]"><div className="flex items-center justify-between border-b border-white/10 px-4"><div className="flex overflow-x-auto">{(["Conversation","Transcript","Notes","Whiteboard","Summary"] as Workspace[]).map(x=><button onClick={()=>setWorkspace(x)} key={x} className={cn("border-b-2 px-2.5 py-4 text-[10px] font-semibold",workspace===x?"border-highlight text-white":"border-transparent text-white/40")}>{x}</button>)}</div><button onClick={()=>setDrawer(false)}><X className="size-4"/></button></div><div className="min-h-0 flex-1 overflow-y-auto p-4">{workspace==="Conversation"&&<Conversation messages={messages}/>} {workspace==="Transcript"&&<Transcript/>} {workspace==="Notes"&&<textarea defaultValue="Ask about data consistency tradeoffs.&#10;&#10;Mention Kafka partition strategy." className="h-full w-full resize-none border border-white/15 bg-white/5 p-4 text-sm outline-none focus:border-brand"/>} {workspace==="Whiteboard"&&<Whiteboard/>} {workspace==="Summary"&&<Summary/>}</div>{workspace==="Conversation"&&<div className="border-t border-white/10 p-3"><PromptInput onSubmit={({text})=>{ if(text) command(text); }} className="border-white/15 bg-white/5"><PromptInputBody><PromptInputTextarea placeholder="Type or say ‘Hey Echo…’" className="text-white"/></PromptInputBody><PromptInputFooter><PromptInputTools><button onClick={()=>setEcho("listening")} type="button" className="p-2"><Mic className="size-4"/></button></PromptInputTools><PromptInputSubmit/></PromptInputFooter></PromptInput></div>}</aside>}
-    {!drawer&&<button onClick={()=>setDrawer(true)} className="absolute right-4 top-20 z-30 flex items-center gap-2 border border-white/15 bg-[#211b27] px-3 py-2 text-xs"><MessageSquare className="size-4"/> Workspace</button>}
-  </div></main>;
+  const navigate=useNavigate();
+  const [workspace,setWorkspace]=useState<Workspace>("Conversation");
+  const [echo,setEcho]=useState<EchoMode>("idle");
+  const [muted,setMuted]=useState(false);
+  const [video,setVideo]=useState(true);
+  const [paused,setPaused]=useState(false);
+  const [messages,setMessages]=useState<{from:"assistant"|"user";text:string}[]>([]);
+  function command(text:string){const q=text.toLowerCase();setMessages(m=>[...m,{from:"user",text}]);setEcho("thinking");window.setTimeout(()=>{let reply="I’m ready when you are.";if(q.includes("notes")){setWorkspace("Notes");reply="Opening your notes."}else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}else if(q.includes("pause")){setPaused(true);reply="Interview paused."}setMessages(m=>[...m,{from:"assistant",text:reply}]);setEcho("speaking");window.setTimeout(()=>setEcho("idle"),1800)},900)}
+
+  return <main className="min-h-screen bg-[#f5f1f8] text-foreground">
+    <header className="flex h-16 items-center justify-between border-b border-foreground/10 bg-card px-5 md:px-8">
+      <Logo/>
+      <div className="hidden items-center md:flex">{stages.map((s,i)=><div key={s} className="flex items-center">
+        <div className="flex flex-col items-center gap-1">
+          <span className={cn("grid size-7 place-items-center rounded-full text-xs font-semibold",i===0?"bg-success text-white":i===1?"bg-brand text-white":"bg-muted text-muted-foreground")}>{i===0?<Check className="size-4"/>:i+1}</span>
+          <span className={cn("text-[11px] font-medium",i<2?"text-foreground":"text-muted-foreground")}>{s}</span>
+        </div>
+        {i<stages.length-1&&<span className={cn("mx-3 mb-4 h-px w-12",i===0?"bg-success":"bg-foreground/15")}/>}
+      </div>)}</div>
+      <button aria-label="Exit interview" onClick={()=>navigate({to:"/report"})} className="grid size-9 place-items-center rounded-full border border-foreground/15 bg-card text-muted-foreground hover:bg-muted"><X className="size-4"/></button>
+    </header>
+
+    <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr_360px]">
+      <aside className="h-fit rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 place-items-center rounded-full bg-brand/10 text-lg font-bold text-brand">C</span>
+          <div><p className="font-semibold">Candidate</p><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"><CheckCircle2 className="size-3"/> Verified</span></div>
+        </div>
+        {[["ROLE","Software Engineer",Clock3],["LAST INTERVIEW","14 Mar 2026",Clock3],["TOTAL SESSIONS","5 completed",Clock3]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</p>
+          <p className="mt-1 font-semibold">{v}</p>
+        </div>)}
+      </aside>
+
+      <section>
+        <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-[#0d1117] shadow-sm">
+          <img src={alexImage} alt="Alex, AI technical interviewer" width={1280} height={720} className="aspect-video w-full object-cover"/>
+          <span className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white"><i className="size-2 rounded-full bg-success"/> EchoSphere AI • LIVE</span>
+          <div className="absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 border-white/70 shadow-lg md:w-40">
+            <img src={candidateImage} alt="Candidate video preview" width={640} height={640} className="aspect-square w-full object-cover"/>
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">You</span>
+          </div>
+          <div className="absolute inset-x-0 bottom-6 flex justify-center">
+            <div className="flex items-center gap-3 rounded-full bg-[#111827]/90 px-3 py-2.5 shadow-xl backdrop-blur">
+              <button onClick={()=>setMuted(!muted)} aria-label="Toggle microphone" className={cn("grid size-11 place-items-center rounded-full text-white",muted?"bg-red-500":"bg-white/15 hover:bg-white/25")}>{muted?<MicOff className="size-5"/>:<Mic className="size-5"/>}</button>
+              <button onClick={()=>setVideo(!video)} aria-label="Toggle camera" className="grid size-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25">{video?<Video className="size-5"/>:<VideoOff className="size-5"/>}</button>
+              <button onClick={()=>navigate({to:"/report"})} aria-label="End interview" className="grid size-11 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="size-5"/></button>
+            </div>
+          </div>
+          {paused&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/60 backdrop-blur-sm"><div className="text-center text-white"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className={cn(violetButton,"mt-5 rounded-full")}><Play/> Resume interview</Button></div></div>}
+        </div>
+        <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-foreground/10 bg-card py-5 text-lg font-medium shadow-sm">
+          EchoSphere AI is listening…
+          <span className="flex items-end gap-[3px]">{[.5,.9,.6,1,.45].map((h,i)=><i key={i} className="echo-wave w-[3px] rounded-full bg-brand" style={{height:`${h*20}px`,animationDelay:`${i*90}ms`}}/>)}</span>
+        </div>
+      </section>
+
+      <aside className="flex flex-col gap-5">
+        <div className="flex min-h-[420px] flex-col rounded-2xl border border-foreground/10 bg-card shadow-sm">
+          <div className="flex border-b border-foreground/10">{(["Conversation","Notes"] as Workspace[]).map(x=><button key={x} onClick={()=>setWorkspace(x)} className={cn("flex flex-1 items-center justify-center gap-2 border-b-2 py-4 text-sm font-medium",workspace===x?"border-brand text-brand":"border-transparent text-muted-foreground")}>{x==="Conversation"?<MessageSquare className="size-4"/>:<NotebookPen className="size-4"/>}{x}</button>)}</div>
+          {workspace==="Conversation"?<>
+            <div className="flex items-center justify-between px-4 py-3 text-sm">
+              <span className="flex items-center gap-2 font-medium"><i className="size-2 rounded-full bg-success"/> Live Transcription</span>
+              <button onClick={()=>setMessages([])} className="text-xs font-medium text-red-500">Clear</button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4">
+              {messages.length===0
+                ? <div className="grid h-full min-h-48 place-items-center text-center text-muted-foreground"><div><MessageSquare className="mx-auto size-6 opacity-40"/><p className="mt-3 text-sm">Transcription will appear here</p></div></div>
+                : <Conversation messages={messages}/>}
+            </div>
+            <div className="border-t border-foreground/10 p-3">
+              <PromptInput onSubmit={({text})=>{ if(text) command(text); }}><PromptInputBody><PromptInputTextarea placeholder="Type or say ‘Hey Echo…’"/></PromptInputBody><PromptInputFooter><PromptInputTools><button onClick={()=>setEcho(echo==="listening"?"idle":"listening")} type="button" className="p-2"><Mic className="size-4"/></button></PromptInputTools><PromptInputSubmit/></PromptInputFooter></PromptInput>
+            </div>
+          </>:<textarea defaultValue="Ask about data consistency tradeoffs.&#10;&#10;Mention Kafka partition strategy." className="m-4 min-h-64 flex-1 resize-none rounded-xl border border-foreground/15 bg-muted/40 p-4 text-sm outline-none focus:border-brand"/>}
+        </div>
+
+        <div className="rounded-2xl border border-foreground/10 bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 font-semibold"><FileText className="size-4 text-brand"/> Interview Summary</span>
+            <span className="rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">Updated</span>
+          </div>
+          <div className="mt-4 rounded-xl bg-muted/50 p-5 text-center">
+            <p className="font-medium">Listening for key points…</p>
+            <p className="mt-2 text-sm text-muted-foreground">I will summarize the detected technical concepts and behavioral traits here as we talk.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>;
 }
-function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}[]}) { return <div className="space-y-5">{messages.map((m,i)=><Message from={m.from} key={i}><p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-white/35">{m.from==="assistant"?"Alex · AI Interviewer":"You"}</p><MessageContent className={cn("text-sm leading-6",m.from==="user"?"bg-brand px-3 py-2 text-white":"text-white/75")}><MessageResponse>{m.text}</MessageResponse></MessageContent></Message>)}</div> }
-function Transcript(){return <div className="space-y-5">{[["00:19","Alex","Tell me about the highest-scale backend system you’ve owned."],["01:02","You","I built a distributed order processing pipeline handling 20,000 events per second."],["02:44","Alex","How did you reason about regional failure?"]].map(([t,n,x])=><div key={t} className="border-l border-white/15 pl-4"><span className="font-mono text-[9px] text-highlight">{t} · {n}</span><p className="mt-1 text-sm leading-6 text-white/70">{x}</p></div>)}</div>}
-function Whiteboard(){return <div><p className="font-mono text-[9px] uppercase tracking-widest text-highlight">Architecture sketch</p><div className="relative mt-4 h-72 border border-white/15 bg-[linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] bg-[size:20px_20px]"><div className="absolute left-4 top-8 border border-info px-3 py-2 text-xs">Client</div><div className="absolute left-32 top-8 border border-highlight px-3 py-2 text-xs">API Gateway</div><div className="absolute bottom-12 left-28 border border-success px-3 py-2 text-xs">Cache</div><div className="absolute bottom-12 right-5 border border-brand px-3 py-2 text-xs">Database</div><svg className="absolute inset-0 size-full"><path d="M65 50 L128 50 M180 66 L165 180 M195 180 L285 180" stroke="rgba(255,255,255,.4)" fill="none" strokeDasharray="4 4"/></svg></div><div className="mt-4 space-y-2">{["Open thread · consistency model","Claim · cache-first reads","Competency · system design"].map(x=><p key={x} className="border border-white/10 p-3 text-xs text-white/60">{x}</p>)}</div></div>}
-function Summary(){return <div><h3 className="text-xl font-semibold">Live observations</h3><div className="mt-5 space-y-3">{["Strong initial decomposition","Clear throughput assumptions","Needs deeper failure-mode analysis"].map((x,i)=><div key={x} className="flex gap-3 border-b border-white/10 pb-3"><span className="font-mono text-[10px] text-highlight">0{i+1}</span><p className="text-sm text-white/70">{x}</p></div>)}</div></div>}
+function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}[]}) { return <div className="space-y-5 py-2">{messages.map((m,i)=><Message from={m.from} key={i}><p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{m.from==="assistant"?"Alex · AI Interviewer":"You"}</p><MessageContent className={cn("text-sm leading-6",m.from==="user"?"rounded-xl bg-brand px-3 py-2 text-white":"text-foreground/80")}><MessageResponse>{m.text}</MessageResponse></MessageContent></Message>)}</div> }
 
 export function ReportPage() {
   const navigate=useNavigate(); const panelScores=[["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
