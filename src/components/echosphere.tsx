@@ -176,7 +176,27 @@ export function SystemCheckPage() {
     <div className="mt-9 grid gap-4 md:grid-cols-2"><CheckCard icon={<Camera/>} n="01" title="Camera Access & Video Preview" status={statuses[0]!}><div className="relative aspect-video overflow-hidden bg-muted">{camera?<video ref={video} autoPlay muted className="size-full object-cover"/>:<div className="grid size-full place-items-center"><Button onClick={enableCamera} className={violetButton}><Camera/> Enable Camera & Microphone</Button></div>}</div></CheckCard>
     <CheckCard icon={<Mic/>} n="02" title="Microphone Access & Input Level" status={statuses[1]!}><div className="flex h-28 items-center gap-1 bg-muted px-8">{Array.from({length:28},(_,i)=><i key={i} className="w-1 bg-brand" style={{height:camera?`${18+(i*13)%62}%`:"8%"}}/>)}</div></CheckCard>
     <CheckCard icon={<MonitorUp/>} n="03" title="Screen Sharing Verification" status={statuses[2]!}><div className="flex h-28 items-center justify-between bg-muted px-5"><span className="text-sm text-muted-foreground">{statuses[2]==="PASS"?"Screen sharing verified":"Screen Sharing Not Started"}</span><Button onClick={screen} variant="outline" className={outlineButton}>Share Screen Now</Button></div></CheckCard>
-    <CheckCard icon={<Network/>} n="04" title="Real Network & Backend Health" status={statuses[3]!}><div className="grid h-28 grid-cols-2 place-items-center bg-muted"><div><p className="text-xs text-muted-foreground">Backend Reachable</p><b className="text-success">Yes</b></div><div><p className="text-xs text-muted-foreground">Latency</p><b>42 ms</b></div></div><button className="mt-3 flex items-center gap-2 text-xs text-brand"><RefreshCw className="size-3"/> Re-check Connectivity</button></CheckCard></div>
+    <CheckCard icon={<Network/>} n="04" title="Real Network & Backend Health" status={statuses[3]!}><div className="grid h-28 grid-cols-2 place-items-center bg-muted"><div><p className="text-xs text-muted-foreground">Backend Reachable</p><b className="text-success">Yes</b></div><div><p className="text-xs text-muted-foreground">Latency</p><b>42 ms</b></div></div><button className="mt-3 flex items-center gap-2 text-xs text-brand"><RefreshCw className="size-3"/> Re-check Connectivity</button></CheckCard>
+    <div className="md:col-span-2"><CheckCard icon={<Aperture/>} n="05" title="Candidate Profile Photo" status={candidate.photo?"PASS":"NOT ACTIVE"}>
+      <div className="grid gap-5 sm:grid-cols-[220px_1fr]">
+        <div className="grid aspect-square place-items-center overflow-hidden border border-foreground/15 bg-muted">
+          {(draftPhoto||candidate.photo)
+            ? <img src={(draftPhoto||candidate.photo)!} alt="Captured candidate photo" className="size-full object-cover"/>
+            : <div className="text-center text-xs text-muted-foreground"><Camera className="mx-auto mb-2 size-6 opacity-50"/>No photo yet</div>}
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Capture a still from your camera. This photo becomes your profile picture and is attached to each interview record.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {!draftPhoto
+              ? <Button onClick={capturePhoto} disabled={!camera} className={cn(violetButton,"disabled:shadow-none")}><Camera/> {candidate.photo?"Retake photo":"Capture photo"}</Button>
+              : <><Button onClick={()=>{setPhoto(draftPhoto);setDraftPhoto(null)}} className={violetButton}><Check/> Use this photo</Button>
+                 <Button onClick={()=>setDraftPhoto(null)} variant="outline" className={outlineButton}><RefreshCw/> Retake</Button></>}
+          </div>
+          {!camera&&<p className="mt-3 text-xs text-muted-foreground">Enable your camera above to capture a photo.</p>}
+          {candidate.photo&&!draftPhoto&&<p className="mt-3 flex items-center gap-2 text-xs text-success"><CheckCircle2 className="size-3"/> Saved to your profile.</p>}
+        </div>
+      </div>
+    </CheckCard></div></div>
     <div className="mt-8 flex justify-end"><Button disabled={!ready} onClick={()=>navigate({to:"/video-test"})} className={cn(violetButton,"disabled:shadow-none")}>Continue to Sample Video <ArrowRight/></Button></div></div></main>;
 }
 function CheckCard({n,title,status,icon,children}:{n:string;title:string;status:CheckStatus;icon:ReactNode;children:ReactNode}) { return <section className={cn(panel,"p-5")}><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3 text-sm font-semibold"><span className="font-mono text-[10px] text-muted-foreground">{n}</span><span className="text-brand">{icon}</span>{title}</div><Status status={status}/></div>{children}</section> }
