@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useServerFn } from "@tanstack/react-start";
 import { getProfile, upsertProfile, uploadPhoto } from "./profile.functions";
 import { listInterviews } from "./interview.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export type CompetencyScore = { name: string; score: number };
 
@@ -128,6 +129,11 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
       try {
         const [profile, interviews] = await Promise.all([fetchProfile({ data: undefined }), fetchInterviews({ data: undefined })]);
         if (cancelled) return;

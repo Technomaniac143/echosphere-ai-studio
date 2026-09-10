@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight, ArrowUpRight, Award, BarChart3, BookOpen, BriefcaseBusiness, Camera,
@@ -16,6 +16,11 @@ import alexImage from "@/assets/interviewer-alex.jpg";
 import candidateImage from "@/assets/candidate-arjun.jpg";
 import { cn } from "@/lib/utils";
 import { useCandidate, requiredProfileFields, type CandidateProfile } from "@/lib/candidate-store";
+import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { createInterview, getInterview, appendMessage, saveInterviewResults } from "@/lib/interview.functions";
+import { scoreInterview } from "@/lib/scoring.functions";
+import { getRoadmap } from "@/lib/roadmap.functions";
 import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
 import { AgentPanel, agents, useAgentRotation } from "@/components/echosphere/agent-panel";
 import { useProctoring } from "@/components/echosphere/use-proctoring";
@@ -37,11 +42,16 @@ function Logo({ dark = false }: { dark?: boolean }) {
 }
 
 function Header({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
+  const { candidate } = useCandidate();
+  const navigate = useNavigate();
+  const initials = candidate.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   return <header className={cn("relative z-40 flex h-16 items-center justify-between border-b px-5 md:px-9", dark ? "border-white/10 bg-[#17131c] text-white" : "border-foreground/15 bg-background", compact && "h-14")}>
     <Logo dark={dark} />
     <div className="flex items-center gap-3">
       {!compact && <><span className={cn("hidden items-center gap-2 text-xs md:flex", dark ? "text-white/55" : "text-muted-foreground")}><span className="size-2 rounded-full bg-success" /> AI ONLINE</span><Link to="/dashboard"><Button variant="ghost" size="sm">Dashboard</Button></Link></>}
-      <button className={cn("grid size-9 place-items-center border text-sm font-semibold", dark ? "border-white/20 bg-white/10" : "border-foreground/20 bg-white")}>AS</button>
+      <button onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }} className={cn("grid size-9 place-items-center overflow-hidden border text-sm font-semibold", dark ? "border-white/20 bg-white/10" : "border-foreground/20 bg-white")}>
+        {candidate.photo ? <img src={candidate.photo} alt="" className="size-full object-cover"/> : initials}
+      </button>
     </div>
   </header>;
 }
@@ -336,25 +346,89 @@ export function VideoTestPage() {
 }
 
 export function AnalysisPage() {
-  const navigate=useNavigate(); const verifications=[[Camera,"Camera & Video Quality","HD video, stable exposure, face clearly visible."],[Mic,"Microphone & Audio Level","Clear voice signal with low background noise."],[MonitorUp,"Screen Sharing Verification","Screen access verified and available."],[ShieldCheck,"Sample Recording Integrity","30-second recording passed integrity analysis."]];
-  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-12"><div className="text-center"><Eyebrow>Automated evaluation</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Candidate Analysis Portal</h1><div className="mx-auto mt-8 grid size-32 place-items-center rounded-full border-2 border-success bg-white shadow-[8px_8px_0_#bff3cf]"><div><Check className="mx-auto size-8 text-success"/><b className="mt-1 block font-mono text-xs text-success">APPROVED</b></div></div><h2 className="mt-5 text-2xl font-semibold">Ready for Interview</h2><p className="mt-2 text-muted-foreground">Environment, media integrity, and sample recording evaluation complete.</p></div><section className="mt-10 border-t border-foreground/20">{verifications.map(([I,t,d]:any,i)=><article key={t} className="grid items-center gap-4 border-b border-foreground/15 bg-white p-5 md:grid-cols-[38px_1fr_90px]"><I className="text-brand"/><div><h3 className="font-semibold">{t}</h3><p className="mt-1 text-sm text-muted-foreground">{d}</p></div><Status status="PASS"/></article>)}</section><div className="mt-9 flex justify-center"><Button onClick={()=>navigate({to:"/interview/$threadId", params:{threadId:"demo"}})} size="lg" className={violetButton}>Start Mock Interview <ArrowRight/></Button></div></div></main>;
+  const navigate=useNavigate();
+  const createInterviewFn = useServerFn(createInterview);
+  const [starting,setStarting]=useState(false);
+  const verifications=[[Camera,"Camera & Video Quality","HD video, stable exposure, face clearly visible."],[Mic,"Microphone & Audio Level","Clear voice signal with low background noise."],[MonitorUp,"Screen Sharing Verification","Screen access verified and available."],[ShieldCheck,"Sample Recording Integrity","30-second recording passed integrity analysis."]];
+  async function startInterview(){
+    setStarting(true);
+    try{
+      const thread = await createInterviewFn({ data: { company: "Mock Company", role: "Software Engineer", domain: "General" } });
+      navigate({ to: "/interview/$threadId", params: { threadId: thread.id } });
+    }catch(e){ console.error(e); setStarting(false); }
+  }
+  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-12"><div className="text-center"><Eyebrow>Automated evaluation</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Candidate Analysis Portal</h1><div className="mx-auto mt-8 grid size-32 place-items-center rounded-full border-2 border-success bg-white shadow-[8px_8px_0_#bff3cf]"><div><Check className="mx-auto size-8 text-success"/><b className="mt-1 block font-mono text-xs text-success">APPROVED</b></div></div><h2 className="mt-5 text-2xl font-semibold">Ready for Interview</h2><p className="mt-2 text-muted-foreground">Environment, media integrity, and sample recording evaluation complete.</p></div><section className="mt-10 border-t border-foreground/20">{verifications.map(([I,t,d]:any,i)=><article key={t} className="grid items-center gap-4 border-b border-foreground/15 bg-white p-5 md:grid-cols-[38px_1fr_90px]"><I className="text-brand"/><div><h3 className="font-semibold">{t}</h3><p className="mt-1 text-sm text-muted-foreground">{d}</p></div><Status status="PASS"/></article>)}</section><div className="mt-9 flex justify-center"><Button disabled={starting} onClick={startInterview} size="lg" className={violetButton}>{starting?"Starting…":"Start Mock Interview"} <ArrowRight/></Button></div></div></main>;
 }
 
 type Workspace="Conversation"|"Notes";
 const stages=["Verify","Technical","Product","Behavioral","Confirm"];
 export function InterviewPage() {
   const navigate=useNavigate();
+  const { threadId } = useParams({ from: "/_authenticated/interview/$threadId" });
   const [workspace,setWorkspace]=useState<Workspace>("Conversation");
   const [echo,setEcho]=useState<EchoMode>("idle");
   const [muted,setMuted]=useState(false);
   const [video,setVideo]=useState(true);
   const [paused,setPaused]=useState(false);
   const [messages,setMessages]=useState<{from:"assistant"|"user";text:string}[]>([]);
+  const [thread,setThread]=useState<{company:string;role:string;domain:string;status:string}|null>(null);
+  const [saving,setSaving]=useState(false);
   const { candidate } = useCandidate();
   const activeAgent = useAgentRotation(!paused, 5000);
   const { videoRef, events, faceTracking, lookingAway } = useProctoring(!paused);
   const [tool,setTool]=useState<"none"|"Code"|"Whiteboard">("none");
-  function command(text:string){const q=text.toLowerCase();setMessages(m=>[...m,{from:"user",text}]);setEcho("thinking");window.setTimeout(()=>{let reply="I’m ready when you are.";if(q.includes("notes")){setWorkspace("Notes");reply="Opening your notes."}else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}else if(q.includes("pause")){setPaused(true);reply="Interview paused."}setMessages(m=>[...m,{from:"assistant",text:reply}]);setEcho("speaking");window.setTimeout(()=>setEcho("idle"),1800)},900)}
+  const getThread = useServerFn(getInterview);
+  const append = useServerFn(appendMessage);
+  const finish = useServerFn(saveInterviewResults);
+  const score = useServerFn(scoreInterview);
+
+  useEffect(() => {
+    if (!threadId) return;
+    getThread({ data: { threadId } }).then(t => {
+      if (!t) { navigate({ to: "/setup" }); return; }
+      setThread(t as any);
+      const transcript = (t as any).transcript || "";
+      const parsed = transcript.split("\n").filter(Boolean).map((line: string) => {
+        const m = line.match(/^\[(assistant|user)\]\s*(.*)$/);
+        return m ? { from: m[1] as "assistant"|"user", text: m[2] } : null;
+      }).filter(Boolean) as {from:"assistant"|"user";text:string}[];
+      setMessages(parsed);
+    }).catch(() => { navigate({ to: "/setup" }); });
+  }, [threadId, getThread, navigate]);
+
+  async function command(text:string){
+    const q=text.toLowerCase();
+    const userMsg = { from: "user" as const, text };
+    setMessages(m=>[...m,userMsg]);
+    setSaving(true);
+    try { await append({ data: { threadId, role: "user", text } }); } catch (e) { console.error(e); }
+    setSaving(false);
+    setEcho("thinking");
+    window.setTimeout(async () => {
+      let reply="I’m ready when you are.";
+      if(q.includes("notes")){setWorkspace("Notes");reply="Opening your notes."}
+      else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}
+      else if(q.includes("pause")){setPaused(true);reply="Interview paused."}
+      const assistantMsg = { from: "assistant" as const, text: reply };
+      setMessages(m=>[...m,assistantMsg]);
+      setSaving(true);
+      try { await append({ data: { threadId, role: "assistant", text: reply } }); } catch (e) { console.error(e); }
+      setSaving(false);
+      setEcho("speaking");
+      window.setTimeout(()=>setEcho("idle"),1800);
+    }, 900);
+  }
+
+  async function endInterview() {
+    const transcript = messages.map(m => `[${m.from}] ${m.text}`).join("\n");
+    setSaving(true);
+    try {
+      await finish({ data: { threadId, transcript, notes: "" } });
+      await score({ data: { threadId, transcript } });
+    } catch (e) { console.error(e); }
+    setSaving(false);
+    navigate({ to: "/report", search: { threadId } });
+  }
 
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground">
     <header className="flex h-16 items-center justify-between border-b border-foreground/10 bg-card px-5 md:px-8">
@@ -366,7 +440,10 @@ export function InterviewPage() {
         </div>
         {i<stages.length-1&&<span className={cn("mx-3 mb-4 h-px w-12",i===0?"bg-success":"bg-foreground/15")}/>}
       </div>)}</div>
-      <button aria-label="Exit interview" onClick={()=>navigate({to:"/report"})} className="grid size-9 place-items-center rounded-full border border-foreground/15 bg-card text-muted-foreground hover:bg-muted"><X className="size-4"/></button>
+      <div className="flex items-center gap-3">
+        {saving&&<span className="text-xs text-muted-foreground">Saving…</span>}
+        <button aria-label="Exit interview" onClick={endInterview} className="grid size-9 place-items-center rounded-full border border-foreground/15 bg-card text-muted-foreground hover:bg-muted"><X className="size-4"/></button>
+      </div>
     </header>
 
     <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr_360px]">
@@ -375,7 +452,7 @@ export function InterviewPage() {
           <span className="grid size-11 place-items-center overflow-hidden rounded-full bg-brand/10 text-lg font-bold text-brand">{candidate.photo?<img src={candidate.photo} alt="" className="size-full object-cover"/>:candidate.name[0]}</span>
           <div><p className="font-semibold">Candidate</p><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"><CheckCircle2 className="size-3"/> Verified</span></div>
         </div>
-        {[["ROLE","Software Engineer",Clock3],["LAST INTERVIEW","14 Mar 2026",Clock3],["TOTAL SESSIONS","5 completed",Clock3]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
+        {[["ROLE",thread?.role||"Software Engineer",Clock3],["DOMAIN",thread?.domain||"General",Clock3],["TOTAL SESSIONS",`${candidate.history.length} completed`,Clock3]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</p>
           <p className="mt-1 font-semibold">{v}</p>
         </div>)}
@@ -407,7 +484,7 @@ export function InterviewPage() {
             <div className="flex items-center gap-3 rounded-full bg-[#111827]/90 px-3 py-2.5 shadow-xl backdrop-blur">
               <button onClick={()=>setMuted(!muted)} aria-label="Toggle microphone" className={cn("grid size-11 place-items-center rounded-full text-white",muted?"bg-red-500":"bg-white/15 hover:bg-white/25")}>{muted?<MicOff className="size-5"/>:<Mic className="size-5"/>}</button>
               <button onClick={()=>setVideo(!video)} aria-label="Toggle camera" className="grid size-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25">{video?<Video className="size-5"/>:<VideoOff className="size-5"/>}</button>
-              <button onClick={()=>navigate({to:"/report"})} aria-label="End interview" className="grid size-11 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="size-5"/></button>
+              <button onClick={endInterview} aria-label="End interview" className="grid size-11 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="size-5"/></button>
             </div>
           </div>
           {paused&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/60 backdrop-blur-sm"><div className="text-center text-white"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className={cn(violetButton,"mt-5 rounded-full")}><Play/> Resume interview</Button></div></div>}
@@ -469,28 +546,52 @@ export function InterviewPage() {
 function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}[]}) { return <div className="space-y-5 py-2">{messages.map((m,i)=><Message from={m.from} key={i}><p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{m.from==="assistant"?"Alex · AI Interviewer":"You"}</p><MessageContent className={cn("text-sm leading-6",m.from==="user"?"rounded-xl bg-brand px-3 py-2 text-white":"text-foreground/80")}><MessageResponse>{m.text}</MessageResponse></MessageContent></Message>)}</div> }
 
 export function ReportPage() {
-  const navigate=useNavigate(); const panelScores=[["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
+  const navigate=useNavigate();
+  const { threadId } = useSearch({ from: "/_authenticated/report" });
+  const getThread = useServerFn(getInterview);
+  const [interview,setInterview]=useState<any>(null);
   const { candidate, cumulative, previousCumulative } = useCandidate();
   const latest = candidate.history[0];
-  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">Arjun Sharma · Backend Engineer at Amazon · May 18, 2025 · 52 min</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
-    <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Cumulative score</p><p className="mt-5 text-8xl font-semibold tracking-tight">{cumulative}</p><p className="mt-2 text-sm">{cumulative>=80?"Strong Hire":cumulative>=70?"Hire":"Needs practice"}</p>{previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {cumulative-previousCumulative>=0?"+":""}{cumulative-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"].map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"].map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
+  const targetId = threadId || latest?.id;
+
+  useEffect(() => {
+    if (!targetId) return;
+    getThread({ data: { threadId: targetId } }).then(t => setInterview(t)).catch(console.error);
+  }, [targetId, getThread]);
+
+  const score = interview?.overall_score ?? latest?.overall_score ?? cumulative ?? 0;
+  const compScores = (interview?.competency_scores as any[]) ?? (latest?.competency_scores as any[]) ?? [];
+  const strengths = interview?.strengths ?? latest?.strengths ?? ["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"];
+  const improvements = interview?.improvements ?? latest?.improvements ?? ["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"];
+  const panelScores = (interview?.panel_scores as any[]) ?? [["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
+  const recommendation = interview?.recommendation ?? latest?.recommendation ?? (score>=80?"Strong Hire":score>=70?"Hire":"Needs practice");
+  const displayCompetencies = compScores.length
+    ? compScores.map((c:any,i:number)=>({name:c.skill||c.name,score:Math.round(c.score),justification:c.justification}))
+    : competencies.map(([name,score])=>({name,score,justification:""}));
+
+  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">{candidate.name} &middot; {interview?.role||latest?.role||"Interview"} &middot; {interview?.company||latest?.company||""} {interview?.created_at ? new Date(interview.created_at).toLocaleDateString() : ""}</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
+    <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Cumulative score</p><p className="mt-5 text-8xl font-semibold tracking-tight">{cumulative}</p><p className="mt-2 text-sm">{recommendation}</p>{previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {cumulative-previousCumulative>=0?"+":""}{cumulative-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{strengths.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{improvements.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
     <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Per-competency scoring</p><h2 className="mt-2 text-3xl font-semibold">Competency breakdown</h2></div><p className="text-xs text-muted-foreground">Each competency scored separately</p></div>
       <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {(latest?.competencies ?? competencies.map(([name,score])=>({name,score}))).map((c,i)=>
+        {displayCompetencies.map((c:any,i:number)=>
           <article key={c.name} className={cn(panel,"flex flex-col p-6")}>
             <div className="flex items-start justify-between">
               <div><h3 className="text-lg font-semibold">{c.name}</h3><p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Confidence {87-i}%</p></div>
               <strong className={cn("text-5xl leading-none",c.score<70?"text-highlight-foreground":"text-brand")}>{c.score}</strong>
             </div>
             <div className="mt-5 h-2 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
-            <p className="mt-3 flex-1 text-xs leading-5 text-muted-foreground">{c.score>80?"Demonstrated clear structure and relevant depth.":c.score>70?"Consistent evidence with room for more precision.":"Needs stronger links between decisions and user outcomes."}</p>
+            <p className="mt-3 flex-1 text-xs leading-5 text-muted-foreground">{c.justification || (c.score>80?"Demonstrated clear structure and relevant depth.":c.score>70?"Consistent evidence with room for more precision.":"Needs stronger links between decisions and user outcomes.")}</p>
             <Button size="sm" variant="outline" className={cn(outlineButton,"mt-5 self-start")}>View Evidence</Button>
           </article>)}
       </div></section>
-    <section className="mt-12 grid gap-8 lg:grid-cols-2"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Distinct perspectives</p><h2 className="mt-2 text-3xl font-semibold">Panel scores</h2><div className="mt-5 grid gap-3">{panelScores.map(([n,r,s]:any)=><div key={n} className="flex items-center gap-4 border border-foreground/15 bg-card p-4"><span className="grid size-10 place-items-center bg-brand text-white">{n[0]}</span><div className="flex-1"><b>{n}</b><p className="text-xs text-muted-foreground">{r}</p></div><strong className="text-2xl">{s}</strong></div>)}</div></div><div className="border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Zap className="text-brand"/><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Analytical signal</p><h2 className="mt-1 text-2xl font-semibold">Panel disagreement detected.</h2></div></div><p className="mt-5 text-sm leading-6 text-muted-foreground">Alex rated technical depth highly, while Maya found weaker evidence connecting implementation choices to customer impact. This is not inconsistency—it reveals distinct assessment dimensions.</p><div className="mt-7 grid grid-cols-2 gap-3"><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Technical view</span><b className="mt-2 block text-3xl">84</b></div><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Product view</span><b className="mt-2 block text-3xl text-brand">68</b></div></div></div></section>
-    <section className="mt-12 border-t border-foreground/15 pt-9"><Eyebrow>Personalized roadmap</Eyebrow><h2 className="text-3xl font-semibold">Your improvement plan</h2><div className="mt-6 grid gap-px bg-foreground/10 md:grid-cols-4">{["Practice system-design tradeoffs.","Quantify project outcomes with metrics.","Connect technical decisions to customer impact.","Practice STAR-format behavioral responses."].map((x,i)=><div key={x} className="bg-card p-5"><span className="font-mono text-xs text-brand">0{i+1}</span><p className="mt-12 font-semibold leading-6">{x}</p><button className="mt-5 text-xs text-muted-foreground">Start practice <ArrowRight className="ml-1 inline size-3"/></button></div>)}</div></section>
+    <section className="mt-12 grid gap-8 lg:grid-cols-2"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Distinct perspectives</p><h2 className="mt-2 text-3xl font-semibold">Panel scores</h2><div className="mt-5 grid gap-3">{panelScores.map(([n,r,s]:any)=><div key={n} className="flex items-center gap-4 border border-foreground/15 bg-card p-4"><span className="grid size-10 place-items-center bg-brand text-white">{n[0]}</span><div className="flex-1"><b>{n}</b><p className="text-xs text-muted-foreground">{r}</p></div><strong className="text-2xl">{s}</strong></div>)}</div></div><div className="border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Zap className="text-brand"/><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Analytical signal</p><h2 className="mt-1 text-2xl font-semibold">Panel disagreement detected.</h2></div></div><p className="mt-5 text-sm leading-6 text-muted-foreground">Alex rated technical depth highly, while Maya found weaker evidence connecting implementation choices to customer impact. This is not inconsistency—it reveals distinct assessment dimensions.</p><div className="mt-7 grid grid-cols-2 gap-3"><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Technical view</span><b className="mt-2 block text-3xl">{panelScores[0]?.[2] ?? 84}</b></div><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Product view</span><b className="mt-2 block text-3xl text-brand">{panelScores[1]?.[2] ?? 68}</b></div></div></div></section>
+    {(() => {
+      const tips = ["Practice system-design tradeoffs.","Quantify project outcomes with metrics.","Connect technical decisions to customer impact.","Practice STAR-format behavioral responses."];
+      return <section className="mt-12 border-t border-foreground/15 pt-9"><Eyebrow>Personalized roadmap</Eyebrow><h2 className="text-3xl font-semibold">Your improvement plan</h2><div className="mt-6 grid gap-px bg-foreground/10 md:grid-cols-4">{tips.map((x,i) => <div key={x} className="bg-card p-5"><span className="font-mono text-xs text-brand">0{i+1}</span><p className="mt-12 font-semibold leading-6">{x}</p><button className="mt-5 text-xs text-muted-foreground">Start practice <ArrowRight className="ml-1 inline size-3"/></button></div>)}</div></section>;
+    })()}
   </div><EchoAssistant hint="Ask Echo to explain any score."/></main>;
 }
+
 const roadmapSteps = [
   ["Sharpen system-design tradeoffs","Technical","Week 1–2","done"],
   ["Quantify project outcomes with metrics","Communication","Week 2–3","done"],
@@ -506,25 +607,32 @@ const roadmapSteps = [
 
 export function RoadmapPage() {
   const navigate = useNavigate();
-  const done = roadmapSteps.filter(s => s[3] === "done").length;
+  const getRoadmapFn = useServerFn(getRoadmap);
+  const [roadmap, setRoadmap] = useState<{steps:any[];done:number;current:any}|null>(null);
+  useEffect(() => {
+    getRoadmapFn({ data: undefined }).then(setRoadmap).catch(console.error);
+  }, [getRoadmapFn]);
+  const steps = roadmap?.steps ?? roadmapSteps.map(s => ({ title: s[0], dimension: s[1], weeks: s[2], status: s[3] }));
+  const done = roadmap?.done ?? steps.filter((s:any) => s.status === "done").length;
+  const current = roadmap?.current ?? steps.find((s:any) => s.status === "current");
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header /><div className="mx-auto max-w-6xl px-5 py-12">
     <div className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
-      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your 10-Step Plan</h1><p className="mt-4 text-muted-foreground">Arjun Sharma · Backend Engineer track · Updated after your last mock interview</p></div>
+      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your 10-Step Plan</h1><p className="mt-4 text-muted-foreground">{candidate.name} · {candidate.targetRole || "Interview"} track · Updated after your last mock interview</p></div>
       <div className="flex gap-2"><Button variant="outline" className={outlineButton} onClick={() => navigate({ to: "/dashboard" })}>Back to Dashboard</Button><Link to="/setup"><Button className={violetButton}><Plus /> Start Practice</Button></Link></div>
     </div>
     <section className="mt-12 grid gap-px bg-foreground/10 md:grid-cols-3">
       <div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Overall progress</p><p className="mt-5 text-8xl font-semibold tracking-tight">{done}<span className="text-4xl text-white/60">/10</span></p><p className="mt-2 text-sm">On pace for your target date</p></div>
-      <div className="bg-card p-7"><div className="flex items-center gap-3"><Clock3 className="size-4 text-brand" /><h2 className="font-semibold">Current focus</h2></div><p className="mt-5 text-2xl font-semibold leading-8">Estimate scale: QPS, storage, and latency math</p><p className="mt-3 text-sm text-muted-foreground">Week 7–8 · Problem Solving</p><button className="mt-6 inline-flex items-center text-xs font-semibold text-brand">Continue this step <ArrowRight className="ml-1 size-3" /></button></div>
+      <div className="bg-card p-7"><div className="flex items-center gap-3"><Clock3 className="size-4 text-brand" /><h2 className="font-semibold">Current focus</h2></div><p className="mt-5 text-2xl font-semibold leading-8">{current?.title ?? "Estimate scale: QPS, storage, and latency math"}</p><p className="mt-3 text-sm text-muted-foreground">{current?.weeks ?? "Week 7–8"} · {current?.dimension ?? "Problem Solving"}</p><button className="mt-6 inline-flex items-center text-xs font-semibold text-brand">Continue this step <ArrowRight className="ml-1 size-3" /></button></div>
       <div className="bg-card p-7"><div className="flex items-center gap-3"><Target className="size-4 text-brand" /><h2 className="font-semibold">Weekly target</h2></div><p className="mt-5 text-2xl font-semibold">4 practice hours</p><p className="mt-3 text-sm text-muted-foreground">2.5 of 4 hours completed this week.</p><div className="mt-5 h-2 bg-muted"><div className="h-full w-[62%] bg-highlight" /></div></div>
     </section>
     <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Milestone timeline</p><h2 className="mt-2 text-3xl font-semibold">Step by step</h2></div><p className="text-xs text-muted-foreground">{done} completed · 1 in progress · {10 - done - 1} upcoming</p></div>
-      <div className="mt-6 border-t border-foreground/20">{roadmapSteps.map(([title, dim, weeks, status], i) => <article key={title} className={cn("grid items-center gap-4 border-b border-foreground/15 px-5 py-5 md:grid-cols-[56px_1fr_160px_130px_120px]", status === "current" ? "bg-brand/5" : "bg-card")}>
-        <span className={cn("grid size-10 place-items-center font-mono text-sm", status === "done" ? "bg-brand text-white" : status === "current" ? "bg-highlight text-foreground" : "border border-foreground/25 text-muted-foreground")}>{status === "done" ? <Check className="size-4" /> : String(i + 1).padStart(2, "0")}</span>
-        <div><h3 className={cn("font-semibold", status === "upcoming" && "text-muted-foreground")}>{title}</h3><p className="mt-1 text-xs text-muted-foreground">{dim}</p></div>
-        <span className="text-xs text-muted-foreground">{weeks}</span>
-        <span className={cn("w-fit px-2 py-1 font-mono text-[10px] uppercase tracking-widest", status === "done" ? "bg-brand/10 text-brand" : status === "current" ? "bg-highlight/30 text-foreground" : "bg-muted text-muted-foreground")}>{status === "done" ? "Completed" : status === "current" ? "In progress" : "Upcoming"}</span>
-        {status === "current" ? <Button size="sm" className={violetButton}>Continue</Button> : status === "upcoming" ? <Button size="sm" variant="outline" className={outlineButton}>Preview</Button> : <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 className="size-4" /> Done</span>}
-      </article>)}</div></section>
+      <div className="mt-6 border-t border-foreground/20">{steps.map((s: any, i: number) => (<article key={s.title} className={cn("grid items-center gap-4 border-b border-foreground/15 px-5 py-5 md:grid-cols-[56px_1fr_160px_130px_120px]", s.status === "current" ? "bg-brand/5" : "bg-card")}>
+        <span className={cn("grid size-10 place-items-center font-mono text-sm", s.status === "done" ? "bg-brand text-white" : s.status === "current" ? "bg-highlight text-foreground" : "border border-foreground/25 text-muted-foreground")}>{s.status === "done" ? <Check className="size-4" /> : String(i + 1).padStart(2, "0")}</span>
+        <div><h3 className={cn("font-semibold", s.status === "upcoming" && "text-muted-foreground")}>{s.title}</h3><p className="mt-1 text-xs text-muted-foreground">{s.dimension}</p></div>
+        <span className="text-xs text-muted-foreground">{s.weeks}</span>
+        <span className={cn("w-fit px-2 py-1 font-mono text-[10px] uppercase tracking-widest", s.status === "done" ? "bg-brand/10 text-brand" : s.status === "current" ? "bg-highlight/30 text-foreground" : "bg-muted text-muted-foreground")}>{s.status === "done" ? "Completed" : s.status === "current" ? "In progress" : "Upcoming"}</span>
+        {s.status === "current" ? <Button size="sm" className={violetButton}>Continue</Button> : s.status === "upcoming" ? <Button size="sm" variant="outline" className={outlineButton}>Preview</Button> : <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 className="size-4" /> Done</span>}
+      </article>))}</div></section>
     <section className="mt-12 border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Sparkles className="text-brand" /><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Echo's recommendation</p><h2 className="mt-1 text-2xl font-semibold">Product Thinking is your biggest lever.</h2></div></div><p className="mt-5 max-w-2xl text-sm leading-6 text-muted-foreground">Your roadmap is weighted toward connecting technical depth with customer impact. Completing the current step unlocks the product-sense mock interview — the single highest-impact milestone left.</p></section>
   </div><EchoAssistant hint="Ask Echo why these steps were chosen." /></main>;
 }
