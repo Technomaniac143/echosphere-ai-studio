@@ -89,7 +89,7 @@ function dbToState(db: any): CandidateState {
   };
 }
 
-function stateToDb(state: CandidateState): Parameters<typeof upsertProfile>[0]["data"] {
+function stateToDb(state: CandidateState): Parameters<typeof upsertProfile>[0] {
   return {
     full_name: state.name,
     email: state.email,
