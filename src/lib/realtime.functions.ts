@@ -80,19 +80,20 @@ Rules:
       return { ok: res.ok, status: res.status, text };
     }
 
-    // Preferred: reuse the configured persona and override its brief.
-    let result = personaId
+    // Preferred: reuse a configured persona (only valid as a UUID) and override its brief.
+    const isUuid = !!personaId && /^[0-9a-f-]{36}$/i.test(personaId);
+    let result = isUuid
       ? await mint({ personaConfig: { personaId, systemPrompt } })
       : { ok: false, status: 0, text: "" };
 
-    // Fallback: a default persona with our interviewer brief.
+    // Fallback: build the interviewer persona from Anam's stock avatar/voice/LLM.
     if (!result.ok) {
       result = await mint({
         personaConfig: {
           name: "Alex",
-          avatarId: "30fa96d0-26c4-4e55-94a0-517025942e18",
-          voiceId: "6bfbe25a-979d-40f3-a92b-5394170af54b",
-          llmId: "0934d97d-0c3a-4f33-91b0-5e136a0ef466",
+          avatarId: "6cc28442-cccd-42a8-b6e4-24b7210a09c5", // Gabriel, seated at a table
+          voiceId: "90c1fb05-4fc0-11f1-84b0-52bacf74fa75", // Cooper
+          llmId: "27cbd128-f1e6-4b67-8ab3-9123659be08c", // Gemini 3 Flash Preview
           systemPrompt,
         },
       });
