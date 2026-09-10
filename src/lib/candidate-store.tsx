@@ -15,7 +15,7 @@ export type InterviewRecord = {
   date: string;
   cumulative: number;
   competencies: CompetencyScore[];
-  photo?: string;
+  photo?: string | undefined;
 };
 
 export type CandidateState = {
