@@ -28,6 +28,7 @@ export type Database = {
           institution: string | null
           photo_path: string | null
           profile_completion: number | null
+          resume_path: string | null
           updated_at: string
           user_id: string
         }
@@ -44,6 +45,7 @@ export type Database = {
           institution?: string | null
           photo_path?: string | null
           profile_completion?: number | null
+          resume_path?: string | null
           updated_at?: string
           user_id: string
         }
@@ -60,6 +62,7 @@ export type Database = {
           institution?: string | null
           photo_path?: string | null
           profile_completion?: number | null
+          resume_path?: string | null
           updated_at?: string
           user_id?: string
         }

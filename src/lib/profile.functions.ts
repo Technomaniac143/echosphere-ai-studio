@@ -9,7 +9,7 @@ const ProfileSchema = z.object({
   institution: z.string().max(200).nullable().optional(),
   degree: z.string().max(200).nullable().optional(),
   department: z.string().max(200).nullable().optional(),
-  graduation_year: z.union([z.number().int().min(1950).max(2100), z.string().max(4)]).nullable().optional(),
+  graduation_year: z.union([z.number(), z.string().max(20)]).nullable().optional(),
   certifications: z.array(z.object({
     name: z.string().max(200),
     org: z.string().max(200),
@@ -17,6 +17,7 @@ const ProfileSchema = z.object({
     url: z.string().max(500),
   })).nullable().optional(),
   photo_path: z.string().max(500).nullable().optional(),
+  resume_path: z.string().max(500).nullable().optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
@@ -40,9 +41,12 @@ export const upsertProfile = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const certifications = data.certifications ?? [];
     const completion = computeCompletion(data);
-    const graduationYear = typeof data.graduation_year === "string" && data.graduation_year
-      ? parseInt(data.graduation_year, 10)
-      : (typeof data.graduation_year === "number" ? data.graduation_year : null);
+    const rawYear = typeof data.graduation_year === "string"
+      ? parseInt(data.graduation_year.replace(/\D/g, "").slice(0, 4), 10)
+      : data.graduation_year;
+    const graduationYear = typeof rawYear === "number" && Number.isFinite(rawYear) && rawYear >= 1950 && rawYear <= 2100
+      ? rawYear
+      : null;
 
     const { data: row, error } = await context.supabase
       .from("candidate_profiles")
@@ -57,6 +61,7 @@ export const upsertProfile = createServerFn({ method: "POST" })
         graduation_year: graduationYear,
         certifications,
         ...(data.photo_path ? { photo_path: data.photo_path } : {}),
+        resume_path: data.resume_path ?? null,
         profile_completion: completion,
       } as any, { onConflict: "user_id" })
       .select()

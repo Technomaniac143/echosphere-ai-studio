@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight, ArrowUpRight, Award, BarChart3, BookOpen, BriefcaseBusiness, Camera,
   Check, CheckCircle2, ChevronRight, CirclePause, Clock3, Download, FileText,
@@ -23,6 +23,7 @@ import { scoreInterview } from "@/lib/scoring.functions";
 import { getRoadmap } from "@/lib/roadmap.functions";
 import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
 import { AgentPanel, agents, useAgentRotation } from "@/components/echosphere/agent-panel";
+import { LiveInterviewer, type LiveMessage } from "@/components/echosphere/live-interviewer";
 import { useProctoring } from "@/components/echosphere/use-proctoring";
 
 const CodeEditorPanel = lazy(() => import("@/components/echosphere/code-editor"));
@@ -433,6 +434,15 @@ export function InterviewPage() {
     load();
   }, [threadId, getThread, navigate]);
 
+  const onLiveTranscript = useCallback((live: LiveMessage[]) => {
+    if (live.length === 0) return;
+    setMessages(live);
+    const last = live[live.length - 1];
+    if (last) {
+      append({ data: { threadId, role: last.from === "user" ? "user" : "assistant", content: last.text } }).catch(() => {});
+    }
+  }, [append, threadId]);
+
   async function command(text:string){
     const q=text.toLowerCase();
     const userMsg = { from: "user" as const, text };
@@ -509,7 +519,7 @@ export function InterviewPage() {
 
       <section>
         <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-[#0d1117] shadow-sm">
-          <img src={alexImage} alt="Alex, AI technical interviewer" width={1280} height={720} className="aspect-video w-full object-cover"/>
+          <LiveInterviewer threadId={threadId} company={thread?.company??"EchoSphere"} role={thread?.role??"Software Engineer"} domain={thread?.domain??"General"} candidateName={candidate.name} muted={muted} paused={paused} onTranscript={onLiveTranscript}/>
           <span className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white"><i className="size-2 rounded-full bg-success"/> EchoSphere AI • LIVE</span>
           <div className={cn("absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 shadow-lg md:w-40",lookingAway?"border-red-500":"border-white/70")}>
             <video ref={videoRef} muted playsInline className={cn("aspect-square w-full bg-black object-cover",(!faceTracking||!video)&&"hidden")}/>

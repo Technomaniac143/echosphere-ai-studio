@@ -108,11 +108,12 @@ function stateToDb(state: CandidateState): any {
     institution: state.profile.institution,
     degree: state.profile.degree,
     department: state.profile.department,
-    graduation_year: state.profile.graduationYear ? Number(state.profile.graduationYear) : null,
+    graduation_year: state.profile.graduationYear ? state.profile.graduationYear.trim() : null,
     certifications: state.profile.certificationName
       ? [{ name: state.profile.certificationName, org: state.profile.certificationOrg, year: state.profile.certificationYear, url: state.profile.certificationUrl }]
       : [],
     photo_path: state.photo ? "pending" : null,
+    resume_path: state.profile.resumeName || null,
   };
 }
 
