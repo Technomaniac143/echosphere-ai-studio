@@ -11,7 +11,7 @@ const CreateInterviewSchema = z.object({
 });
 
 const SaveInterviewSchema = z.object({
-  id: z.string().uuid(),
+  threadId: z.string().uuid(),
   transcript: z.string().max(50000),
   notes: z.string().max(20000).optional().default(""),
   competency_scores: z.array(CompetencySchema).max(20).optional().default([]),
