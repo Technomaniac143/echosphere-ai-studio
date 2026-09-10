@@ -131,7 +131,7 @@ export function PortalPage() {
   </div><EchoAssistant /></main>;
 }
 
-const competencies = [["Technical",84],["Problem Solving",78],["Communication",86],["Product Thinking",61],["Leadership",75],["Behavioral",82],["Adaptability",79]] as const;
+
 export function DashboardPage() {
   const { candidate, profileComplete } = useCandidate();
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-16 md:px-10">
