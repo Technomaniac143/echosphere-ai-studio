@@ -13,9 +13,9 @@ const CreateInterviewSchema = z.object({
 const SaveInterviewSchema = z.object({
   id: z.string().uuid(),
   transcript: z.string().max(50000),
-  notes: z.string().max(20000),
-  competency_scores: z.array(CompetencySchema).max(20),
-  cumulative: z.number().min(0).max(100),
+  notes: z.string().max(20000).optional().default(""),
+  competency_scores: z.array(CompetencySchema).max(20).optional().default([]),
+  cumulative: z.number().min(0).max(100).optional().default(0),
 });
 
 export const listInterviews = createServerFn({ method: "GET" })
