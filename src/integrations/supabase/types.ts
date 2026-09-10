@@ -16,47 +16,50 @@ export type Database = {
     Tables: {
       candidate_profiles: {
         Row: {
-          certifications: Json
+          certifications: Json | null
           created_at: string
           degree: string | null
           department: string | null
-          email: string
-          full_name: string
+          email: string | null
+          full_name: string | null
           github_url: string | null
           graduation_year: number | null
+          id: string
           institution: string | null
-          profile_completion: number
-          resume_path: string | null
+          photo_path: string | null
+          profile_completion: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          certifications?: Json
+          certifications?: Json | null
           created_at?: string
           degree?: string | null
           department?: string | null
-          email?: string
-          full_name?: string
+          email?: string | null
+          full_name?: string | null
           github_url?: string | null
           graduation_year?: number | null
+          id?: string
           institution?: string | null
-          profile_completion?: number
-          resume_path?: string | null
+          photo_path?: string | null
+          profile_completion?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          certifications?: Json
+          certifications?: Json | null
           created_at?: string
           degree?: string | null
           department?: string | null
-          email?: string
-          full_name?: string
+          email?: string | null
+          full_name?: string | null
           github_url?: string | null
           graduation_year?: number | null
+          id?: string
           institution?: string | null
-          profile_completion?: number
-          resume_path?: string | null
+          photo_path?: string | null
+          profile_completion?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -64,7 +67,6 @@ export type Database = {
       }
       interview_messages: {
         Row: {
-          ai_message_id: string | null
           content: Json
           created_at: string
           id: string
@@ -75,8 +77,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          ai_message_id?: string | null
-          content?: Json
+          content: Json
           created_at?: string
           id?: string
           role: string
@@ -86,7 +87,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          ai_message_id?: string | null
           content?: Json
           created_at?: string
           id?: string
@@ -96,67 +96,86 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "interview_messages_thread_id_fkey"
-            columns: ["thread_id"]
-            isOneToOne: false
-            referencedRelation: "interview_threads"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       interview_threads: {
         Row: {
           company: string
-          completed_at: string | null
+          competency_scores: Json | null
           created_at: string
-          current_stage: string
-          difficulty: string
+          cumulative_score: number | null
           domain: string
           id: string
-          interview_mode: string
-          overall_score: number | null
+          notes: string | null
           role: string
-          started_at: string | null
           status: string
-          title: string
+          transcript: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           company: string
-          completed_at?: string | null
+          competency_scores?: Json | null
           created_at?: string
-          current_stage?: string
-          difficulty: string
+          cumulative_score?: number | null
           domain: string
           id?: string
-          interview_mode?: string
-          overall_score?: number | null
+          notes?: string | null
           role: string
-          started_at?: string | null
           status?: string
-          title: string
+          transcript?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           company?: string
-          completed_at?: string | null
+          competency_scores?: Json | null
           created_at?: string
-          current_stage?: string
-          difficulty?: string
+          cumulative_score?: number | null
           domain?: string
           id?: string
-          interview_mode?: string
-          overall_score?: number | null
+          notes?: string | null
           role?: string
-          started_at?: string | null
+          status?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      roadmap_progress: {
+        Row: {
+          created_at: string
+          dimension: string
+          id: string
+          order_index: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          weeks: string | null
+        }
+        Insert: {
+          created_at?: string
+          dimension: string
+          id?: string
+          order_index?: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          weeks?: string | null
+        }
+        Update: {
+          created_at?: string
+          dimension?: string
+          id?: string
+          order_index?: number
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
+          weeks?: string | null
         }
         Relationships: []
       }
