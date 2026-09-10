@@ -18,10 +18,37 @@ export type InterviewRecord = {
   photo?: string | undefined;
 };
 
+export type CandidateProfile = {
+  resumeName: string;
+  github: string;
+  institution: string;
+  degree: string;
+  department: string;
+  graduationYear: string;
+  certificationName: string;
+  certificationOrg: string;
+  certificationYear: string;
+  certificationUrl: string;
+};
+
+export const emptyProfile: CandidateProfile = {
+  resumeName: "", github: "", institution: "", degree: "", department: "",
+  graduationYear: "", certificationName: "", certificationOrg: "", certificationYear: "", certificationUrl: "",
+};
+
+export const requiredProfileFields: (keyof CandidateProfile)[] = [
+  "resumeName", "github", "institution", "degree", "department", "graduationYear",
+];
+
+export function isProfileComplete(profile: CandidateProfile) {
+  return requiredProfileFields.every(f => (profile[f] ?? "").trim().length > 0);
+}
+
 export type CandidateState = {
   name: string;
   email: string;
   photo: string | null;
+  profile: CandidateProfile;
   history: InterviewRecord[];
 };
 
@@ -40,6 +67,7 @@ const defaultState: CandidateState = {
   name: "Arjun Sharma",
   email: "arjun.sharma@example.com",
   photo: null,
+  profile: emptyProfile,
   history: [
     { id: "r1", company: "Amazon", role: "Backend Engineer", domain: "Backend Systems", date: "May 18, 2025", cumulative: 82, competencies: defaultCompetencies },
     { id: "r2", company: "Microsoft", role: "Staff Software Engineer", domain: "Distributed Systems", date: "Apr 02, 2025", cumulative: 76, competencies: [
@@ -56,6 +84,8 @@ const defaultState: CandidateState = {
 type Ctx = {
   candidate: CandidateState;
   setPhoto: (dataUrl: string | null) => void;
+  setProfile: (profile: CandidateProfile) => void;
+  profileComplete: boolean;
   cumulative: number;
   previousCumulative: number | null;
 };
@@ -70,7 +100,7 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<CandidateState>;
-        setCandidate(c => ({ ...c, ...parsed, history: parsed.history?.length ? parsed.history : c.history }));
+        setCandidate(c => ({ ...c, ...parsed, profile: { ...c.profile, ...(parsed.profile ?? {}) }, history: parsed.history?.length ? parsed.history : c.history }));
       }
     } catch { /* ignore malformed storage */ }
   }, []);
@@ -83,15 +113,25 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setProfile = useCallback((profile: CandidateProfile) => {
+    setCandidate(c => {
+      const next = { ...c, profile };
+      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+
   const value = useMemo<Ctx>(() => {
     const latest = candidate.history[0];
     return {
       candidate,
       setPhoto,
+      setProfile,
+      profileComplete: isProfileComplete(candidate.profile),
       cumulative: latest?.cumulative ?? 0,
       previousCumulative: candidate.history[1]?.cumulative ?? null,
     };
-  }, [candidate, setPhoto]);
+  }, [candidate, setPhoto, setProfile]);
 
   return <CandidateContext.Provider value={value}>{children}</CandidateContext.Provider>;
 }
