@@ -424,7 +424,7 @@ export function InterviewPage() {
     const userMsg = { from: "user" as const, text };
     setMessages(m=>[...m,userMsg]);
     setSaving(true);
-    try { await append({ data: { threadId, role: "user", text } }); } catch (e) { console.error(e); }
+    try { await append({ data: { threadId, role: "user", content: text } }); } catch (e) { console.error(e); }
     setSaving(false);
     setEcho("thinking");
     window.setTimeout(async () => {
