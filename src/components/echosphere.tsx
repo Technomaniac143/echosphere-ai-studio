@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight, ArrowUpRight, Award, BarChart3, BookOpen, BriefcaseBusiness, Camera,
   Check, CheckCircle2, ChevronRight, CirclePause, Clock3, Download, FileText,
@@ -169,6 +169,25 @@ export function ProfilePage() {
   const delta = previousCumulative === null ? null : cumulative - previousCumulative;
   const best = Math.max(...candidate.history.map(h => h.cumulative), 0);
   const p = candidate.profile;
+  const getRoadmapFn = useServerFn(getRoadmap);
+  const [roadmap, setRoadmap] = useState<{steps:any[];done:number;current:any}|null>(null);
+  useEffect(() => {
+    getRoadmapFn({ data: undefined }).then(setRoadmap).catch(console.error);
+  }, [getRoadmapFn]);
+
+  const allCompetencies = useMemo(() => {
+    const map = new Map<string, number[]>();
+    candidate.history.forEach(h => {
+      (h.competency_scores ?? h.competencies ?? []).forEach((c: any) => {
+        const name = c.skill || c.name;
+        if (!name) return;
+        if (!map.has(name)) map.set(name, []);
+        map.get(name)!.push(Number(c.score) || 0);
+      });
+    });
+    return Array.from(map.entries()).map(([name, scores]) => ({ name, score: Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) }));
+  }, [candidate.history]);
+
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-7xl px-5 py-10 md:px-10">
 
     <section className={cn(panel,"overflow-hidden")}>
@@ -181,7 +200,7 @@ export function ProfilePage() {
         <div>
           <Eyebrow>Candidate portfolio</Eyebrow>
           <h1 className="text-4xl font-semibold tracking-[-.04em] md:text-5xl">{candidate.name}</h1>
-          <p className="mt-2 text-muted-foreground">{candidate.email} · Backend Engineer track</p>
+          <p className="mt-2 text-muted-foreground">{candidate.email} · {candidate.targetRole || "Interview"} track</p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
             <span className="border border-foreground/15 bg-muted px-3 py-1.5">{candidate.history.length} interviews completed</span>
             <span className="border border-foreground/15 bg-muted px-3 py-1.5">Best score {best}</span>
@@ -206,33 +225,35 @@ export function ProfilePage() {
     <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_.5fr]">
       <section>
         <div className="mb-5 flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Interview history</p><h2 className="mt-1 text-2xl font-semibold">Completed interviews</h2></div><span className="text-xs text-muted-foreground">{candidate.history.length} records</span></div>
-        <div className="grid gap-5 md:grid-cols-2">
-          {candidate.history.map(record=><article key={record.id} className={cn(panel,"flex flex-col p-5")}>
-            <div className="flex items-start gap-3">
-              <span className="size-11 shrink-0 overflow-hidden rounded-full border border-foreground/15 bg-muted">
-                {record.photo
-                  ? <img src={record.photo} alt="" className="size-full object-cover"/>
-                  : <span className="grid size-full place-items-center text-xs font-semibold text-brand">{candidate.name.split(" ").map(w=>w[0]).join("")}</span>}
-              </span>
-              <div className="flex-1">
-                <p className="font-mono text-[9px] uppercase tracking-widest text-brand">{record.domain}</p>
-                <h3 className="mt-1 font-semibold leading-5">{record.company} · {record.role}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{record.date}</p>
+        {candidate.history.length === 0
+          ? <div className={cn(panel,"p-8 text-center")}><p className="text-muted-foreground">No interviews yet. Start your first mock interview to see your history here.</p><Link to="/setup"><Button className={cn(violetButton,"mt-4")}>Start New Mock Interview</Button></Link></div>
+          : <div className="grid gap-5 md:grid-cols-2">
+            {candidate.history.map(record=><article key={record.id} className={cn(panel,"flex flex-col p-5")}>
+              <div className="flex items-start gap-3">
+                <span className="size-11 shrink-0 overflow-hidden rounded-full border border-foreground/15 bg-muted">
+                  {record.photo
+                    ? <img src={record.photo} alt="" className="size-full object-cover"/>
+                    : <span className="grid size-full place-items-center text-xs font-semibold text-brand">{candidate.name.split(" ").map(w=>w[0]).join("")}</span>}
+                </span>
+                <div className="flex-1">
+                  <p className="font-mono text-[9px] uppercase tracking-widest text-brand">{record.domain}</p>
+                  <h3 className="mt-1 font-semibold leading-5">{record.company} · {record.role}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">{record.date}</p>
+                </div>
+                <div className="text-right"><p className="text-3xl font-semibold leading-none">{record.cumulative}</p><p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Cumulative</p></div>
               </div>
-              <div className="text-right"><p className="text-3xl font-semibold leading-none">{record.cumulative}</p><p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Cumulative</p></div>
-            </div>
-            <div className="mt-5 grid gap-2">
-              {record.competencies.map(c=><div key={c.name}>
-                <div className="flex justify-between text-[11px]"><span className="text-muted-foreground">{c.name}</span><b>{c.score}</b></div>
-                <div className="mt-1 h-1.5 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
-              </div>)}
-            </div>
-            <div className="mt-5 flex gap-2 border-t border-foreground/10 pt-4">
-              <Link to="/report"><Button size="sm" variant="outline" className={outlineButton}>View Report</Button></Link>
-              <Link to="/setup"><Button size="sm" variant="ghost">Practice again</Button></Link>
-            </div>
-          </article>)}
-        </div>
+              <div className="mt-5 grid gap-2">
+                {record.competencies.map((c:{name:string;score:number})=><div key={c.name}>
+                  <div className="flex justify-between text-[11px]"><span className="text-muted-foreground">{c.name}</span><b>{c.score}</b></div>
+                  <div className="mt-1 h-1.5 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
+                </div>)}
+              </div>
+              <div className="mt-5 flex gap-2 border-t border-foreground/10 pt-4">
+                <Link to="/report" search={{ threadId: record.id }}><Button size="sm" variant="outline" className={outlineButton}>View Report</Button></Link>
+                <Link to="/setup"><Button size="sm" variant="ghost">Practice again</Button></Link>
+              </div>
+            </article>)}
+          </div>}
       </section>
       <aside className="space-y-5">
         <div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile details</h2><span className={cn("font-mono text-[10px] uppercase tracking-widest",profileComplete?"text-success":"text-brand")}>{profileComplete?"Complete":"Incomplete"}</span></div>
@@ -241,8 +262,10 @@ export function ProfilePage() {
           </dl>
           <Link to="/profile/edit" className="mt-4 inline-flex items-center text-xs text-brand">Edit profile <ChevronRight className="size-3"/></Link>
         </div>
-        <div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{competencies.map(([c,v])=><div key={c}><div className="mb-1 flex justify-between text-xs"><span>{c}</span><b>{v}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div>
-        <div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">6 of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">Next: connect technical decisions to customer impact.</p></div>
+        <div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{allCompetencies.length
+          ? allCompetencies.map(c=><div key={c.name}><div className="mb-1 flex justify-between text-xs"><span>{c.name}</span><b>{c.score}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${c.score}%`}}/></div></div>)
+          : <p className="text-xs text-muted-foreground">Complete an interview to see your competency breakdown.</p>}</div></div>
+        <div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">{roadmap?.done ?? 0} of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">{roadmap?.current?.title || "Start your roadmap after your first interview."}</p></div>
       </aside>
     </div>
   </div><EchoAssistant/></main>;
@@ -549,9 +572,10 @@ export function ReportPage() {
   const navigate=useNavigate();
   const { threadId } = useSearch({ from: "/_authenticated/report" });
   const getThread = useServerFn(getInterview);
-  const [interview,setInterview]=useState<any>(null);
+  const [interview,setInterview]=useState<Record<string,any>|null>(null);
+  const iv = interview as any;
   const { candidate, cumulative, previousCumulative } = useCandidate();
-  const latest = candidate.history[0];
+  const latest = candidate.history[0] as any;
   const targetId = threadId || latest?.id;
 
   useEffect(() => {
@@ -559,18 +583,18 @@ export function ReportPage() {
     getThread({ data: { threadId: targetId } }).then(t => setInterview(t)).catch(console.error);
   }, [targetId, getThread]);
 
-  const score = interview?.overall_score ?? latest?.overall_score ?? cumulative ?? 0;
-  const compScores = (interview?.competency_scores as any[]) ?? (latest?.competency_scores as any[]) ?? [];
-  const strengths = interview?.strengths ?? latest?.strengths ?? ["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"];
-  const improvements = interview?.improvements ?? latest?.improvements ?? ["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"];
-  const panelScores = (interview?.panel_scores as any[]) ?? [["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
-  const recommendation = interview?.recommendation ?? latest?.recommendation ?? (score>=80?"Strong Hire":score>=70?"Hire":"Needs practice");
+  const score = iv?.['overall_score'] ?? latest?.overall_score ?? cumulative ?? 0;
+  const compScores = (iv?.['competency_scores'] as any[]) ?? (latest?.competency_scores as any[]) ?? [];
+  const strengths = iv?.['strengths'] ?? latest?.strengths ?? ["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"];
+  const improvements = iv?.['improvements'] ?? latest?.improvements ?? ["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"];
+  const panelScores = (iv?.['panel_scores'] as any[]) ?? [["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
+  const recommendation = iv?.['recommendation'] ?? latest?.recommendation ?? (score>=80?"Strong Hire":score>=70?"Hire":"Needs practice");
   const displayCompetencies = compScores.length
     ? compScores.map((c:any,i:number)=>({name:c.skill||c.name,score:Math.round(c.score),justification:c.justification}))
     : competencies.map(([name,score])=>({name,score,justification:""}));
 
-  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">{candidate.name} &middot; {interview?.role||latest?.role||"Interview"} &middot; {interview?.company||latest?.company||""} {interview?.created_at ? new Date(interview.created_at).toLocaleDateString() : ""}</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
-    <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Cumulative score</p><p className="mt-5 text-8xl font-semibold tracking-tight">{cumulative}</p><p className="mt-2 text-sm">{recommendation}</p>{previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {cumulative-previousCumulative>=0?"+":""}{cumulative-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{strengths.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{improvements.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
+  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">{candidate.name} &middot; {iv?.['role']||latest?.role||"Interview"} &middot; {iv?.['company']||latest?.company||""} {iv?.['created_at'] ? new Date(iv?.['created_at']).toLocaleDateString() : ""}</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
+    <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">{interview ? "Interview score" : "Cumulative score"}</p><p className="mt-5 text-8xl font-semibold tracking-tight">{score}</p><p className="mt-2 text-sm">{recommendation}</p>{interview && previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {score-previousCumulative>=0?"+":""}{score-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{strengths.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{improvements.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
     <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Per-competency scoring</p><h2 className="mt-2 text-3xl font-semibold">Competency breakdown</h2></div><p className="text-xs text-muted-foreground">Each competency scored separately</p></div>
       <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {displayCompetencies.map((c:any,i:number)=>
@@ -607,6 +631,7 @@ const roadmapSteps = [
 
 export function RoadmapPage() {
   const navigate = useNavigate();
+  const { candidate } = useCandidate();
   const getRoadmapFn = useServerFn(getRoadmap);
   const [roadmap, setRoadmap] = useState<{steps:any[];done:number;current:any}|null>(null);
   useEffect(() => {
@@ -617,7 +642,7 @@ export function RoadmapPage() {
   const current = roadmap?.current ?? steps.find((s:any) => s.status === "current");
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header /><div className="mx-auto max-w-6xl px-5 py-12">
     <div className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
-      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your 10-Step Plan</h1><p className="mt-4 text-muted-foreground">{candidate.name} · {candidate.targetRole || "Interview"} track · Updated after your last mock interview</p></div>
+      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your 10-Step Plan</h1><p className="mt-4 text-muted-foreground">{candidate.name} · {(candidate as any).targetRole || "Interview"} track · Updated after your last mock interview</p></div>
       <div className="flex gap-2"><Button variant="outline" className={outlineButton} onClick={() => navigate({ to: "/dashboard" })}>Back to Dashboard</Button><Link to="/setup"><Button className={violetButton}><Plus /> Start Practice</Button></Link></div>
     </div>
     <section className="mt-12 grid gap-px bg-foreground/10 md:grid-cols-3">

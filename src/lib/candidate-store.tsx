@@ -15,6 +15,13 @@ export type InterviewRecord = {
   cumulative: number;
   competencies: CompetencyScore[];
   photo?: string | undefined;
+  overall_score?: number | undefined;
+  competency_scores?: any[] | undefined;
+  strengths?: string[] | undefined;
+  improvements?: string[] | undefined;
+  recommendation?: string | undefined;
+  panel_scores?: any[] | undefined;
+  created_at?: string | undefined;
 };
 
 export type CandidateProfile = {
@@ -49,6 +56,7 @@ export type CandidateState = {
   photo: string | null;
   profile: CandidateProfile;
   history: InterviewRecord[];
+  targetRole?: string | undefined;
 };
 
 export const defaultCompetencies: CompetencyScore[] = [
@@ -66,6 +74,7 @@ const emptyState: CandidateState = {
   photo: null,
   profile: emptyProfile,
   history: [],
+  targetRole: undefined,
 };
 
 function dbToState(db: any): CandidateState {
@@ -87,6 +96,7 @@ function dbToState(db: any): CandidateState {
       certificationUrl: certs.url || "",
     },
     history: [],
+    targetRole: db.target_role || undefined,
   };
 }
 
@@ -128,10 +138,13 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setCandidate(emptyState);
+          setLoading(false);
+        }
         return;
       }
       try {
@@ -144,8 +157,15 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
-    return () => { cancelled = true; };
+    };
+    load();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") load();
+    });
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile, fetchInterviews]);
 
   const setPhoto = useCallback(async (photo: string | null) => {
