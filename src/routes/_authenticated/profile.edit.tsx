@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EditProfilePage } from "@/components/echosphere";
-export const Route = createFileRoute("/profile/edit")({
+export const Route = createFileRoute("/_authenticated/profile/edit")({
   head: () => ({ meta: [
     { title: "Edit Profile — EchoSphere" },
     { name: "description", content: "Add your resume, project repository, education and certifications before an interview." },
