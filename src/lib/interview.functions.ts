@@ -40,12 +40,12 @@ export const listInterviews = createServerFn({ method: "GET" })
 
 export const getInterview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ threadId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("interview_threads")
       .select("*")
-      .eq("id", data.id)
+      .eq("id", data.threadId)
       .eq("user_id", context.userId)
       .single();
     if (error) throw error;
