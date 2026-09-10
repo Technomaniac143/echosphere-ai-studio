@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { ReportPage } from "@/components/echosphere";
+export const Route = createFileRoute("/report")({ head:()=>({meta:[{title:"Interview Report — EchoSphere"},{name:"description",content:"Evidence-backed interview scores, panel perspectives, and improvement roadmap."},{property:"og:title",content:"Interview Report — EchoSphere"},{property:"og:description",content:"Evidence-backed interview scores, panel perspectives, and improvement roadmap."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: ReportPage });

@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { ProfilePage } from "@/components/echosphere";
+export const Route = createFileRoute("/profile")({ head:()=>({meta:[{title:"Candidate Information — EchoSphere"},{name:"description",content:"Build the candidate context used to personalize the interview."},{property:"og:title",content:"Candidate Information — EchoSphere"},{property:"og:description",content:"Build the candidate context used to personalize the interview."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: ProfilePage });

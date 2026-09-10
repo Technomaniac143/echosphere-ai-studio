@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { PortalPage } from "@/components/echosphere";
+export const Route = createFileRoute("/portal")({ head:()=>({meta:[{title:"Candidate Portal — EchoSphere"},{name:"description",content:"Enter the EchoSphere candidate interview environment."},{property:"og:title",content:"Candidate Portal — EchoSphere"},{property:"og:description",content:"Enter the EchoSphere candidate interview environment."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: PortalPage });

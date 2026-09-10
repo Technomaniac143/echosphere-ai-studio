@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { InterviewPage } from "@/components/echosphere";
+export const Route = createFileRoute("/interview/$threadId")({ head:()=>({meta:[{title:"Live Interview — EchoSphere"},{name:"description",content:"An adaptive, voice-first AI interview room."},{property:"og:title",content:"Live Interview — EchoSphere"},{property:"og:description",content:"An adaptive, voice-first AI interview room."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: InterviewPage });
