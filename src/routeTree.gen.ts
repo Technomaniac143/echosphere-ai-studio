@@ -13,13 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as PortalRouteImport } from './routes/portal'
-import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SystemCheckRouteImport } from './routes/system-check'
 import { Route as VideoTestRouteImport } from './routes/video-test'
 import { Route as InterviewThreadIdRouteImport } from './routes/interview.$threadId'
+import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as ProfileEditRouteImport } from './routes/profile.edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,11 +40,6 @@ const DashboardRoute = DashboardRouteImport.update({
 const PortalRoute = PortalRouteImport.update({
   id: '/portal',
   path: '/portal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportRoute = ReportRouteImport.update({
@@ -77,10 +72,15 @@ const InterviewThreadIdRoute = InterviewThreadIdRouteImport.update({
   path: '/interview/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -88,7 +88,6 @@ export interface FileRoutesByFullPath {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/portal': typeof PortalRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/report': typeof ReportRoute
   '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
@@ -96,13 +95,13 @@ export interface FileRoutesByFullPath {
   '/video-test': typeof VideoTestRoute
   '/interview/$threadId': typeof InterviewThreadIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/portal': typeof PortalRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/report': typeof ReportRoute
   '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
@@ -110,6 +109,7 @@ export interface FileRoutesByTo {
   '/video-test': typeof VideoTestRoute
   '/interview/$threadId': typeof InterviewThreadIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile': typeof ProfileIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,7 +117,6 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/portal': typeof PortalRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/report': typeof ReportRoute
   '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
@@ -125,6 +124,7 @@ export interface FileRoutesById {
   '/video-test': typeof VideoTestRoute
   '/interview/$threadId': typeof InterviewThreadIdRoute
   '/profile/edit': typeof ProfileEditRoute
+  '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,7 +133,6 @@ export interface FileRouteTypes {
     | '/analysis'
     | '/dashboard'
     | '/portal'
-    | '/profile'
     | '/report'
     | '/roadmap'
     | '/setup'
@@ -141,13 +140,13 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
+    | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/analysis'
     | '/dashboard'
     | '/portal'
-    | '/profile'
     | '/report'
     | '/roadmap'
     | '/setup'
@@ -155,13 +154,13 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
+    | '/profile'
   id:
     | '__root__'
     | '/'
     | '/analysis'
     | '/dashboard'
     | '/portal'
-    | '/profile'
     | '/report'
     | '/roadmap'
     | '/setup'
@@ -169,6 +168,7 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
+    | '/profile/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,13 +176,14 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   PortalRoute: typeof PortalRoute
-  ProfileRoute: typeof ProfileRouteWithChildren
   ReportRoute: typeof ReportRoute
   RoadmapRoute: typeof RoadmapRoute
   SetupRoute: typeof SetupRoute
   SystemCheckRoute: typeof SystemCheckRoute
   VideoTestRoute: typeof VideoTestRoute
   InterviewThreadIdRoute: typeof InterviewThreadIdRoute
+  ProfileEditRoute: typeof ProfileEditRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -213,13 +214,6 @@ declare module '@tanstack/react-router' {
       path: '/portal'
       fullPath: '/portal'
       preLoaderRoute: typeof PortalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report': {
@@ -264,39 +258,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterviewThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile/edit': {
       id: '/profile/edit'
-      path: '/edit'
+      path: '/profile/edit'
       fullPath: '/profile/edit'
       preLoaderRoute: typeof ProfileEditRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface ProfileRouteChildren {
-  ProfileEditRoute: typeof ProfileEditRoute
-}
-
-const ProfileRouteChildren: ProfileRouteChildren = {
-  ProfileEditRoute: ProfileEditRoute,
-}
-
-const ProfileRouteWithChildren =
-  ProfileRoute._addFileChildren(ProfileRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   PortalRoute: PortalRoute,
-  ProfileRoute: ProfileRouteWithChildren,
   ReportRoute: ReportRoute,
   RoadmapRoute: RoadmapRoute,
   SetupRoute: SetupRoute,
   SystemCheckRoute: SystemCheckRoute,
   VideoTestRoute: VideoTestRoute,
   InterviewThreadIdRoute: InterviewThreadIdRoute,
+  ProfileEditRoute: ProfileEditRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
