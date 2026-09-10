@@ -314,6 +314,19 @@ export function InterviewPage() {
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</p>
           <p className="mt-1 font-semibold">{v}</p>
         </div>)}
+        <div className="border-t border-foreground/10 pt-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Interview panel</p>
+          <div className="mt-3"><AgentPanel activeIndex={activeAgent}/></div>
+        </div>
+        <div className="mt-4 border-t border-foreground/10 pt-4">
+          <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground"><Eye className="size-3"/> Integrity monitor</p>
+          <p className="mt-2 text-xs text-muted-foreground">{faceTracking?"Face tracking active · local only":"Face tracking unavailable — camera or model not loaded"}</p>
+          <div className="mt-3 space-y-1.5">
+            {events.length===0
+              ? <p className="text-xs text-success">No flags recorded.</p>
+              : events.slice(0,4).map(e=><p key={e.id} className="flex justify-between text-[11px]"><span className="text-red-500">{e.kind==="look-away"?"Looked away":"Left the window"}</span><span className="text-muted-foreground">{e.at}</span></p>)}
+          </div>
+        </div>
       </aside>
 
       <section>
