@@ -307,7 +307,7 @@ export function InterviewPage() {
     <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr_360px]">
       <aside className="h-fit rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-full bg-brand/10 text-lg font-bold text-brand">C</span>
+          <span className="grid size-11 place-items-center overflow-hidden rounded-full bg-brand/10 text-lg font-bold text-brand">{candidate.photo?<img src={candidate.photo} alt="" className="size-full object-cover"/>:candidate.name[0]}</span>
           <div><p className="font-semibold">Candidate</p><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"><CheckCircle2 className="size-3"/> Verified</span></div>
         </div>
         {[["ROLE","Software Engineer",Clock3],["LAST INTERVIEW","14 Mar 2026",Clock3],["TOTAL SESSIONS","5 completed",Clock3]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
