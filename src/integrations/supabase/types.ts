@@ -14,7 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      candidate_profiles: {
+        Row: {
+          certifications: Json | null
+          created_at: string
+          degree: string | null
+          department: string | null
+          email: string | null
+          full_name: string | null
+          github_url: string | null
+          graduation_year: number | null
+          id: string
+          institution: string | null
+          photo_path: string | null
+          profile_completion: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          certifications?: Json | null
+          created_at?: string
+          degree?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          graduation_year?: number | null
+          id?: string
+          institution?: string | null
+          photo_path?: string | null
+          profile_completion?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          certifications?: Json | null
+          created_at?: string
+          degree?: string | null
+          department?: string | null
+          email?: string | null
+          full_name?: string | null
+          github_url?: string | null
+          graduation_year?: number | null
+          id?: string
+          institution?: string | null
+          photo_path?: string | null
+          profile_completion?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interview_threads: {
+        Row: {
+          company: string
+          competency_scores: Json | null
+          created_at: string
+          cumulative_score: number | null
+          domain: string
+          id: string
+          notes: string | null
+          role: string
+          status: string
+          transcript: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company: string
+          competency_scores?: Json | null
+          created_at?: string
+          cumulative_score?: number | null
+          domain: string
+          id?: string
+          notes?: string | null
+          role: string
+          status?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string
+          competency_scores?: Json | null
+          created_at?: string
+          cumulative_score?: number | null
+          domain?: string
+          id?: string
+          notes?: string | null
+          role?: string
+          status?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      roadmap_progress: {
+        Row: {
+          created_at: string
+          dimension: string
+          id: string
+          order_index: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          weeks: string | null
+        }
+        Insert: {
+          created_at?: string
+          dimension: string
+          id?: string
+          order_index?: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          weeks?: string | null
+        }
+        Update: {
+          created_at?: string
+          dimension?: string
+          id?: string
+          order_index?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          weeks?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
