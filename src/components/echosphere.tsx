@@ -285,6 +285,10 @@ export function InterviewPage() {
   const [video,setVideo]=useState(true);
   const [paused,setPaused]=useState(false);
   const [messages,setMessages]=useState<{from:"assistant"|"user";text:string}[]>([]);
+  const { candidate } = useCandidate();
+  const activeAgent = useAgentRotation(!paused, 5000);
+  const { videoRef, events, faceTracking, lookingAway } = useProctoring(!paused);
+  const [tool,setTool]=useState<"none"|"Code"|"Whiteboard">("none");
   function command(text:string){const q=text.toLowerCase();setMessages(m=>[...m,{from:"user",text}]);setEcho("thinking");window.setTimeout(()=>{let reply="I’m ready when you are.";if(q.includes("notes")){setWorkspace("Notes");reply="Opening your notes."}else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}else if(q.includes("pause")){setPaused(true);reply="Interview paused."}setMessages(m=>[...m,{from:"assistant",text:reply}]);setEcho("speaking");window.setTimeout(()=>setEcho("idle"),1800)},900)}
 
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground">
