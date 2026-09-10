@@ -286,3 +286,40 @@ export function ReportPage() {
     <section className="mt-12 border-t border-foreground/15 pt-9"><Eyebrow>Personalized roadmap</Eyebrow><h2 className="text-3xl font-semibold">Your improvement plan</h2><div className="mt-6 grid gap-px bg-foreground/10 md:grid-cols-4">{["Practice system-design tradeoffs.","Quantify project outcomes with metrics.","Connect technical decisions to customer impact.","Practice STAR-format behavioral responses."].map((x,i)=><div key={x} className="bg-card p-5"><span className="font-mono text-xs text-brand">0{i+1}</span><p className="mt-12 font-semibold leading-6">{x}</p><button className="mt-5 text-xs text-muted-foreground">Start practice <ArrowRight className="ml-1 inline size-3"/></button></div>)}</div></section>
   </div><EchoAssistant hint="Ask Echo to explain any score."/></main>;
 }
+const roadmapSteps = [
+  ["Sharpen system-design tradeoffs","Technical","Week 1–2","done"],
+  ["Quantify project outcomes with metrics","Communication","Week 2–3","done"],
+  ["Connect technical decisions to customer impact","Product Thinking","Week 3–4","done"],
+  ["Practice STAR-format behavioral responses","Behavioral","Week 4–5","done"],
+  ["Deep-dive distributed systems fundamentals","Technical","Week 5–6","done"],
+  ["Lead a mock design review end-to-end","Leadership","Week 6–7","done"],
+  ["Estimate scale: QPS, storage, and latency math","Problem Solving","Week 7–8","current"],
+  ["Frame ambiguous prompts with clarifying questions","Adaptability","Week 8–9","upcoming"],
+  ["Run a full product-sense mock interview","Product Thinking","Week 9–10","upcoming"],
+  ["Final mixed-panel mock and review","All dimensions","Week 10","upcoming"],
+] as const;
+
+export function RoadmapPage() {
+  const navigate = useNavigate();
+  const done = roadmapSteps.filter(s => s[3] === "done").length;
+  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header /><div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
+      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your 10-Step Plan</h1><p className="mt-4 text-muted-foreground">Arjun Sharma · Backend Engineer track · Updated after your last mock interview</p></div>
+      <div className="flex gap-2"><Button variant="outline" className={outlineButton} onClick={() => navigate({ to: "/dashboard" })}>Back to Dashboard</Button><Link to="/setup"><Button className={violetButton}><Plus /> Start Practice</Button></Link></div>
+    </div>
+    <section className="mt-12 grid gap-px bg-foreground/10 md:grid-cols-3">
+      <div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Overall progress</p><p className="mt-5 text-8xl font-semibold tracking-tight">{done}<span className="text-4xl text-white/60">/10</span></p><p className="mt-2 text-sm">On pace for your target date</p></div>
+      <div className="bg-card p-7"><div className="flex items-center gap-3"><Clock3 className="size-4 text-brand" /><h2 className="font-semibold">Current focus</h2></div><p className="mt-5 text-2xl font-semibold leading-8">Estimate scale: QPS, storage, and latency math</p><p className="mt-3 text-sm text-muted-foreground">Week 7–8 · Problem Solving</p><button className="mt-6 inline-flex items-center text-xs font-semibold text-brand">Continue this step <ArrowRight className="ml-1 size-3" /></button></div>
+      <div className="bg-card p-7"><div className="flex items-center gap-3"><Target className="size-4 text-brand" /><h2 className="font-semibold">Weekly target</h2></div><p className="mt-5 text-2xl font-semibold">4 practice hours</p><p className="mt-3 text-sm text-muted-foreground">2.5 of 4 hours completed this week.</p><div className="mt-5 h-2 bg-muted"><div className="h-full w-[62%] bg-highlight" /></div></div>
+    </section>
+    <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Milestone timeline</p><h2 className="mt-2 text-3xl font-semibold">Step by step</h2></div><p className="text-xs text-muted-foreground">{done} completed · 1 in progress · {10 - done - 1} upcoming</p></div>
+      <div className="mt-6 border-t border-foreground/20">{roadmapSteps.map(([title, dim, weeks, status], i) => <article key={title} className={cn("grid items-center gap-4 border-b border-foreground/15 px-5 py-5 md:grid-cols-[56px_1fr_160px_130px_120px]", status === "current" ? "bg-brand/5" : "bg-card")}>
+        <span className={cn("grid size-10 place-items-center font-mono text-sm", status === "done" ? "bg-brand text-white" : status === "current" ? "bg-highlight text-foreground" : "border border-foreground/25 text-muted-foreground")}>{status === "done" ? <Check className="size-4" /> : String(i + 1).padStart(2, "0")}</span>
+        <div><h3 className={cn("font-semibold", status === "upcoming" && "text-muted-foreground")}>{title}</h3><p className="mt-1 text-xs text-muted-foreground">{dim}</p></div>
+        <span className="text-xs text-muted-foreground">{weeks}</span>
+        <span className={cn("w-fit px-2 py-1 font-mono text-[10px] uppercase tracking-widest", status === "done" ? "bg-brand/10 text-brand" : status === "current" ? "bg-highlight/30 text-foreground" : "bg-muted text-muted-foreground")}>{status === "done" ? "Completed" : status === "current" ? "In progress" : "Upcoming"}</span>
+        {status === "current" ? <Button size="sm" className={violetButton}>Continue</Button> : status === "upcoming" ? <Button size="sm" variant="outline" className={outlineButton}>Preview</Button> : <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 className="size-4" /> Done</span>}
+      </article>)}</div></section>
+    <section className="mt-12 border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Sparkles className="text-brand" /><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Echo's recommendation</p><h2 className="mt-1 text-2xl font-semibold">Product Thinking is your biggest lever.</h2></div></div><p className="mt-5 max-w-2xl text-sm leading-6 text-muted-foreground">Your roadmap is weighted toward connecting technical depth with customer impact. Completing the current step unlocks the product-sense mock interview — the single highest-impact milestone left.</p></section>
+  </div><EchoAssistant hint="Ask Echo why these steps were chosen." /></main>;
+}
