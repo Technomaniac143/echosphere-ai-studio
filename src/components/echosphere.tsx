@@ -320,9 +320,11 @@ export function InterviewPage() {
         <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-[#0d1117] shadow-sm">
           <img src={alexImage} alt="Alex, AI technical interviewer" width={1280} height={720} className="aspect-video w-full object-cover"/>
           <span className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white"><i className="size-2 rounded-full bg-success"/> EchoSphere AI • LIVE</span>
-          <div className="absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 border-white/70 shadow-lg md:w-40">
-            <img src={candidateImage} alt="Candidate video preview" width={640} height={640} className="aspect-square w-full object-cover"/>
+          <div className={cn("absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 shadow-lg md:w-40",lookingAway?"border-red-500":"border-white/70")}>
+            <video ref={videoRef} muted playsInline className={cn("aspect-square w-full bg-black object-cover",(!faceTracking||!video)&&"hidden")}/>
+            {(!faceTracking||!video)&&<img src={candidate.photo??candidateImage} alt="Candidate video preview" className="aspect-square w-full object-cover"/>}
             <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">You</span>
+            {lookingAway&&<span className="absolute inset-x-0 top-0 bg-red-500 py-0.5 text-center text-[10px] font-semibold text-white">Pay attention</span>}
           </div>
           <div className="absolute inset-x-0 bottom-6 flex justify-center">
             <div className="flex items-center gap-3 rounded-full bg-[#111827]/90 px-3 py-2.5 shadow-xl backdrop-blur">
