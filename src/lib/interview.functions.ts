@@ -11,11 +11,11 @@ const CreateInterviewSchema = z.object({
 });
 
 const SaveInterviewSchema = z.object({
-  id: z.string().uuid(),
+  threadId: z.string().uuid(),
   transcript: z.string().max(50000),
-  notes: z.string().max(20000),
-  competency_scores: z.array(CompetencySchema).max(20),
-  cumulative: z.number().min(0).max(100),
+  notes: z.string().max(20000).optional().default(""),
+  competency_scores: z.array(CompetencySchema).max(20).optional().default([]),
+  cumulative: z.number().min(0).max(100).optional().default(0),
 });
 
 export const listInterviews = createServerFn({ method: "GET" })
@@ -40,12 +40,12 @@ export const listInterviews = createServerFn({ method: "GET" })
 
 export const getInterview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ threadId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("interview_threads")
       .select("*")
-      .eq("id", data.id)
+      .eq("id", data.threadId)
       .eq("user_id", context.userId)
       .single();
     if (error) throw error;
@@ -84,7 +84,7 @@ export const saveInterviewResults = createServerFn({ method: "POST" })
         cumulative_score: data.cumulative,
         status: "completed",
       } as any)
-      .eq("id", data.id)
+      .eq("id", data.threadId)
       .eq("user_id", context.userId);
     if (error) throw error;
     return { ok: true };

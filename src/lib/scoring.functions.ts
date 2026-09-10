@@ -18,6 +18,14 @@ export const scoreInterview = createServerFn({ method: "POST" })
 {
   "overall": number 0-100,
   "justification": "short paragraph",
+  "strengths": ["3-4 concise strengths"],
+  "improvements": ["3-4 concise improvements"],
+  "recommendation": "Strong Hire | Hire | Needs practice",
+  "panel_scores": [
+    { "name": "Alex", "role": "Technical Interviewer", "score": number 0-100 },
+    { "name": "Maya", "role": "Product Manager", "score": number 0-100 },
+    { "name": "Daniel", "role": "Hiring Manager", "score": number 0-100 }
+  ],
   "competencies": [
     { "name": "Communication", "score": number 0-100, "note": "one sentence" },
     { "name": "Technical Depth", "score": number 0-100, "note": "one sentence" },
@@ -31,7 +39,7 @@ export const scoreInterview = createServerFn({ method: "POST" })
 Transcript:
 """${data.transcript}"""`;
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -50,16 +58,25 @@ Transcript:
 
     const competencies = parsed.competencies ?? [];
     const overall = Math.round(parsed.overall ?? 0);
+    const strengths = Array.isArray(parsed.strengths) ? parsed.strengths : [];
+    const improvements = Array.isArray(parsed.improvements) ? parsed.improvements : [];
+    const recommendation = typeof parsed.recommendation === "string" ? parsed.recommendation : (overall >= 80 ? "Strong Hire" : overall >= 70 ? "Hire" : "Needs practice");
+    const panelScores = Array.isArray(parsed.panel_scores) ? parsed.panel_scores : [];
 
     const { error } = await context.supabase
       .from("interview_threads")
       .update({
+        overall_score: overall,
         cumulative_score: overall,
         competency_scores: competencies,
+        strengths,
+        improvements,
+        recommendation,
+        panel_scores: panelScores,
       } as any)
       .eq("id", data.threadId)
       .eq("user_id", context.userId);
     if (error) throw error;
 
-    return { overall, justification: parsed.justification ?? "", competencies };
+    return { overall, justification: parsed.justification ?? "", competencies, strengths, improvements, recommendation, panelScores };
   });

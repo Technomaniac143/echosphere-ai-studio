@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.interview_threads IS 'Interview sessions with AI-generated scoring and recommendation fields.';

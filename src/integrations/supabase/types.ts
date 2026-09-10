@@ -106,9 +106,14 @@ export type Database = {
           cumulative_score: number | null
           domain: string
           id: string
+          improvements: string[] | null
           notes: string | null
+          overall_score: number | null
+          panel_scores: Json | null
+          recommendation: string | null
           role: string
           status: string
+          strengths: string[] | null
           transcript: string | null
           updated_at: string
           user_id: string
@@ -120,9 +125,14 @@ export type Database = {
           cumulative_score?: number | null
           domain: string
           id?: string
+          improvements?: string[] | null
           notes?: string | null
+          overall_score?: number | null
+          panel_scores?: Json | null
+          recommendation?: string | null
           role: string
           status?: string
+          strengths?: string[] | null
           transcript?: string | null
           updated_at?: string
           user_id: string
@@ -134,9 +144,14 @@ export type Database = {
           cumulative_score?: number | null
           domain?: string
           id?: string
+          improvements?: string[] | null
           notes?: string | null
+          overall_score?: number | null
+          panel_scores?: Json | null
+          recommendation?: string | null
           role?: string
           status?: string
+          strengths?: string[] | null
           transcript?: string | null
           updated_at?: string
           user_id?: string
