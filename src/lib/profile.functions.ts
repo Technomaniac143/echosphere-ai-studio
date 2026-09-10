@@ -22,7 +22,7 @@ const ProfileSchema = z.object({
 export const getProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
+    const { data, error } = await context.supabase
       .from("candidate_profiles")
       .select("*")
       .eq("user_id", context.userId)
@@ -44,7 +44,7 @@ export const upsertProfile = createServerFn({ method: "POST" })
       ? parseInt(data.graduation_year, 10)
       : (typeof data.graduation_year === "number" ? data.graduation_year : null);
 
-    const { data: row, error } = await (context.supabase as any)
+    const { data: row, error } = await context.supabase
       .from("candidate_profiles")
       .upsert({
         user_id: context.userId,
@@ -73,18 +73,18 @@ export const uploadPhoto = createServerFn({ method: "POST" })
     if (!base64) throw new Error("Invalid image data");
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const path = `${context.userId}/photo.jpg`;
-    const { error } = await (context.supabase as any).storage
+    const { error } = await context.supabase.storage
       .from("candidate-photos")
       .upload(path, bytes, { contentType: data.contentType, upsert: true });
     if (error) throw error;
 
-    const { error: updateError } = await (context.supabase as any)
+    const { error: updateError } = await context.supabase
       .from("candidate_profiles")
       .update({ photo_path: path } as any)
       .eq("user_id", context.userId);
     if (updateError) throw updateError;
 
-    const { data: urlData } = (context.supabase as any).storage.from("candidate-photos").getPublicUrl(path);
+    const { data: urlData } = context.supabase.storage.from("candidate-photos").getPublicUrl(path);
     return { path, url: urlData?.publicUrl ?? null };
   });
 
@@ -92,7 +92,7 @@ export const getPhotoUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ path: z.string() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: signed } = await (context.supabase as any).storage
+    const { data: signed } = await context.supabase.storage
       .from("candidate-photos")
       .createSignedUrl(data.path, 60 * 60 * 24);
     return signed?.signedUrl ?? null;

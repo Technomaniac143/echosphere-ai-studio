@@ -16,7 +16,7 @@ export const askEcho = createServerFn({ method: "POST" })
 
     const tools: Record<string, () => Promise<string>> = {
       get_latest_interview_scores: async () => {
-        const { data: rows, error } = await (context.supabase as any)
+        const { data: rows, error } = await context.supabase
           .from("interview_threads")
           .select("company, role, cumulative_score, competency_scores, created_at")
           .eq("user_id", context.userId)
@@ -30,7 +30,7 @@ export const askEcho = createServerFn({ method: "POST" })
         return `Latest interview: ${row.company} (${row.role}) — overall ${row.cumulative_score}. Competencies: ${comps}.`;
       },
       list_interviews: async () => {
-        const { data: rows, error } = await (context.supabase as any)
+        const { data: rows, error } = await context.supabase
           .from("interview_threads")
           .select("company, role, cumulative_score, created_at")
           .eq("user_id", context.userId)

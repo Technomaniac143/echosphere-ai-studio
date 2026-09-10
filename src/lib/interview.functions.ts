@@ -21,7 +21,7 @@ const SaveInterviewSchema = z.object({
 export const listInterviews = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
+    const { data, error } = await context.supabase
       .from("interview_threads")
       .select("id, company, role, domain, created_at, cumulative_score, competency_scores")
       .eq("user_id", context.userId)
@@ -42,7 +42,7 @@ export const getInterview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await (context.supabase as any)
+    const { data: row, error } = await context.supabase
       .from("interview_threads")
       .select("*")
       .eq("id", data.id)
@@ -56,7 +56,7 @@ export const createInterview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => CreateInterviewSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await (context.supabase as any)
+    const { data: row, error } = await context.supabase
       .from("interview_threads")
       .insert({
         user_id: context.userId,
@@ -75,7 +75,7 @@ export const saveInterviewResults = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => SaveInterviewSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as any)
+    const { error } = await context.supabase
       .from("interview_threads")
       .update({
         transcript: data.transcript,
@@ -94,7 +94,7 @@ export const appendMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ threadId: z.string().uuid(), role: z.enum(["user", "assistant"]), content: z.string() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as any)
+    const { error } = await context.supabase
       .from("interview_messages")
       .insert({
         thread_id: data.threadId,
