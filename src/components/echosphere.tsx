@@ -435,7 +435,7 @@ export function InterviewPage() {
       const assistantMsg = { from: "assistant" as const, text: reply };
       setMessages(m=>[...m,assistantMsg]);
       setSaving(true);
-      try { await append({ data: { threadId, role: "assistant", text: reply } }); } catch (e) { console.error(e); }
+      try { await append({ data: { threadId, role: "assistant", content: reply } }); } catch (e) { console.error(e); }
       setSaving(false);
       setEcho("speaking");
       window.setTimeout(()=>setEcho("idle"),1800);
