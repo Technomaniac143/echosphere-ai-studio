@@ -605,7 +605,7 @@ export function ReportPage() {
   const panelScores = rawPanelScores.length
     ? rawPanelScores.map((p: any) => [p.name ?? "Interviewer", p.role ?? "Panel", Math.round(p.score ?? 0)])
     : [];
-  const recommendation = iv?.['recommendation'] ?? latest?.recommendation ?? (score>=80?"Strong Hire":score>=70?"Hire":"Needs practice");
+  const recommendation = iv?.['recommendation'] ?? latest?.recommendation ?? "";
   const displayCompetencies = compScores.length
     ? compScores.map((c:any,i:number)=>({name:c.skill||c.name,score:Math.round(c.score),justification:c.justification}))
     : [];
