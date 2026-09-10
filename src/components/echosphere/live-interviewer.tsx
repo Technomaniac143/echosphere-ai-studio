@@ -106,7 +106,7 @@ export function LiveInterviewer({
       anam.addListener("VIDEO_PLAY_STARTED" as any, () => console.log("[live] video playing"));
 
       console.log("[live] anam token ok, streaming");
-      await anam.streamToVideoElement(videoId, micStream);
+      await anam.streamToVideoElement(videoId);
       setStatus("live");
     } catch (e: any) {
       console.error(e);
