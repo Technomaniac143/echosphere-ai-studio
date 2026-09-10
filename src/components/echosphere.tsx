@@ -376,8 +376,8 @@ export function AnalysisPage() {
   async function startInterview(){
     setStarting(true);
     try{
-      const thread = await createInterviewFn({ data: { company: "Mock Company", role: "Software Engineer", domain: "General" } });
-      navigate({ to: "/interview/$threadId", params: { threadId: thread.id } });
+      const thread = await createInterviewFn({ data: { company: "Mock Company", role: "Software Engineer", domain: "General" } }) as any;
+      navigate({ to: "/interview/$threadId", params: { threadId: thread?.id } });
     }catch(e){ console.error(e); setStarting(false); }
   }
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-12"><div className="text-center"><Eyebrow>Automated evaluation</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Candidate Analysis Portal</h1><div className="mx-auto mt-8 grid size-32 place-items-center rounded-full border-2 border-success bg-white shadow-[8px_8px_0_#bff3cf]"><div><Check className="mx-auto size-8 text-success"/><b className="mt-1 block font-mono text-xs text-success">APPROVED</b></div></div><h2 className="mt-5 text-2xl font-semibold">Ready for Interview</h2><p className="mt-2 text-muted-foreground">Environment, media integrity, and sample recording evaluation complete.</p></div><section className="mt-10 border-t border-foreground/20">{verifications.map(([I,t,d]:any,i)=><article key={t} className="grid items-center gap-4 border-b border-foreground/15 bg-white p-5 md:grid-cols-[38px_1fr_90px]"><I className="text-brand"/><div><h3 className="font-semibold">{t}</h3><p className="mt-1 text-sm text-muted-foreground">{d}</p></div><Status status="PASS"/></article>)}</section><div className="mt-9 flex justify-center"><Button disabled={starting} onClick={startInterview} size="lg" className={violetButton}>{starting?"Starting…":"Start Mock Interview"} <ArrowRight/></Button></div></div></main>;
