@@ -15,7 +15,7 @@ import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, Pro
 import alexImage from "@/assets/interviewer-alex.jpg";
 import candidateImage from "@/assets/candidate-arjun.jpg";
 import { cn } from "@/lib/utils";
-import { useCandidate } from "@/lib/candidate-store";
+import { useCandidate, requiredProfileFields, type CandidateProfile } from "@/lib/candidate-store";
 import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
 import { AgentPanel, agents, useAgentRotation } from "@/components/echosphere/agent-panel";
 import { useProctoring } from "@/components/echosphere/use-proctoring";
@@ -123,9 +123,42 @@ export function PortalPage() {
 
 const competencies = [["Technical",84],["Problem Solving",78],["Communication",86],["Product Thinking",61],["Leadership",75],["Behavioral",82],["Adaptability",79]] as const;
 export function DashboardPage() {
-  const { candidate, cumulative, previousCumulative } = useCandidate();
+  const { candidate, profileComplete } = useCandidate();
+  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-16 md:px-10">
+    <Eyebrow>Candidate workspace</Eyebrow>
+    <h1 className="text-4xl font-semibold tracking-[-.04em] md:text-6xl">Welcome back, {candidate.name.split(" ")[0]}.</h1>
+    <p className="mt-3 text-muted-foreground">{candidate.email}</p>
+    {!profileComplete && <div className={cn(panel,"mt-8 flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-brand p-5")}>
+      <p className="text-sm">Complete your profile details before starting an interview.</p>
+      <Link to="/profile/edit"><Button size="sm" className={violetButton}>Edit profile</Button></Link>
+    </div>}
+    <div className="mt-10 grid gap-4 sm:grid-cols-2">
+      <Link to="/setup" className={cn(panel,"group flex items-center justify-between p-6 hover:border-brand")}><span><span className="font-mono text-[10px] uppercase tracking-widest text-brand">Practice</span><span className="mt-2 block text-xl font-semibold">Start New Mock Interview</span></span><Plus className="text-brand"/></Link>
+      <Link to="/profile" className={cn(panel,"group flex items-center justify-between p-6 hover:border-brand")}><span><span className="font-mono text-[10px] uppercase tracking-widest text-brand">Portfolio</span><span className="mt-2 block text-xl font-semibold">View Profile</span></span><UserRound className="text-brand"/></Link>
+      <Link to="/report" className={cn(panel,"group flex items-center justify-between p-6 hover:border-brand")}><span><span className="font-mono text-[10px] uppercase tracking-widest text-brand">Feedback</span><span className="mt-2 block text-xl font-semibold">Reports</span></span><FileText className="text-brand"/></Link>
+      <Link to="/roadmap" className={cn(panel,"group flex items-center justify-between p-6 hover:border-brand")}><span><span className="font-mono text-[10px] uppercase tracking-widest text-brand">Growth</span><span className="mt-2 block text-xl font-semibold">Roadmap</span></span><Route className="text-brand"/></Link>
+    </div>
+  </div><EchoAssistant/></main>;
+}
+
+const setupSteps = ["Target company","Target role","Domain & focus","AI proposal","Confirm"];
+export function SetupPage() {
+  const navigate=useNavigate(); const [step,setStep]=useState(0); const [company,setCompany]=useState("Google"); const [role,setRole]=useState("Senior Software Engineer"); const [domain,setDomain]=useState("Data Engineering"); const [difficulty,setDifficulty]=useState("Hard");
+  const companies=["Google","Microsoft","Amazon","Apple","Meta","Netflix","Uber"]; const roles=["Software Engineer","Senior Software Engineer","Staff Software Engineer","Frontend Engineer","Backend Engineer","Full Stack Engineer","Data Engineer"];
+  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="border-b border-foreground/15 bg-white px-5 py-6"><div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto">{setupSteps.map((s,i)=><button onClick={()=>setStep(i)} key={s} className={cn("flex min-w-40 flex-1 items-center gap-3 border-b-2 pb-3 text-left",i===step?"border-brand text-foreground":i<step?"border-success text-muted-foreground":"border-foreground/10 text-muted-foreground")}><span className={cn("grid size-7 shrink-0 place-items-center border font-mono text-xs",i===step&&"border-brand bg-brand text-white",i<step&&"border-success bg-success text-white")}>{i<step?<Check className="size-3"/>:i+1}</span><span className="text-xs font-semibold">{s}</span></button>)}</div></div>
+    <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[1fr_310px]"><section><Eyebrow>Interview configuration · Step {step+1} of 5</Eyebrow>{step===0&&<ChoiceStep title="Where do you want to interview?" subtitle="Choose a target company so Echo can tune the interview context." items={companies} value={company} setValue={setCompany}/>} {step===1&&<ChoiceStep title="Which role are you targeting?" subtitle="This determines the expected scope and interview panel." items={roles} value={role} setValue={setRole}/>} {step===2&&<ChoiceStep title="Choose your domain & competency focus." subtitle="Select the course or domain that should guide the interview." items={["Data Engineering","Backend Systems","Frontend Architecture","Machine Learning","Product Engineering"]} value={domain} setValue={setDomain}/>} {step===3&&<Proposal difficulty={difficulty} setDifficulty={setDifficulty}/>} {step===4&&<ConfirmSetup company={company} role={role} domain={domain} difficulty={difficulty}/>}<div className="mt-10 flex justify-between"><Button disabled={step===0} onClick={()=>setStep(x=>x-1)} variant="outline" className={outlineButton}>Back</Button>{step<4?<Button onClick={()=>setStep(x=>x+1)} className={violetButton}>Continue <ArrowRight/></Button>:<Button onClick={()=>navigate({to:"/profile"})} className={violetButton}>Proceed to Candidate Information <ArrowRight/></Button>}</div></section>
+      <aside><div className={cn(panel,"sticky top-24 p-6")}><EchoOrb small mode="speaking"/><p className="mt-6 font-mono text-[10px] uppercase tracking-widest text-brand">Echo insight</p><p className="mt-3 text-lg leading-7">{step<2?"I’ll use this to calibrate scope, seniority, and likely interview patterns.":step===2?"Your focus will shape both the questions and how evidence is scored.":"I’ve inferred a three-person panel based on the role. Your interview will emphasize system design and technical depth."}</p><div className="mt-6 border-t border-foreground/15 pt-4 text-xs text-muted-foreground">Say “Hey Echo, configure this interview for me.”</div></div></aside></div><EchoAssistant/></main>;
+}
+
+function ChoiceStep({title,subtitle,items,value,setValue}:{title:string;subtitle:string;items:string[];value:string;setValue:(v:string)=>void}) { return <><h1 className="max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">{title}</h1><p className="mt-4 text-muted-foreground">{subtitle}</p><div className="mt-9 grid gap-3 sm:grid-cols-2">{items.map((x,i)=><button onClick={()=>setValue(x)} key={x} className={cn("flex min-h-20 items-center justify-between border p-5 text-left font-semibold transition",value===x?"border-brand bg-brand text-white shadow-[5px_5px_0_#f2dc47]":"border-foreground/15 bg-white hover:border-brand")}><span><i className="mr-3 font-mono text-xs not-italic opacity-50">0{i+1}</i>{x}</span>{value===x&&<Check/>}</button>)}</div></> }
+function Proposal({difficulty,setDifficulty}:{difficulty:string;setDifficulty:(v:string)=>void}) { const weights=[["Technical",35],["System Design",30],["Problem Solving",20],["Behavioral",10],["Communication",5]] as const; return <><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Your adaptive<br/><span className="text-brand">AI proposal.</span></h1><div className="mt-9 grid gap-5 md:grid-cols-2"><div className={cn(panel,"p-6")}><h3 className="font-semibold">Competency weighting</h3><div className="mt-5 space-y-4">{weights.map(([n,v])=><div key={n}><div className="flex justify-between text-xs"><span>{n}</span><b>{v}%</b></div><div className="mt-1 h-2 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div><div className={cn(panel,"p-6")}><h3 className="font-semibold">Inferred interview panel</h3><div className="mt-5 space-y-3">{[["A","Technical Interviewer"],["M","Domain Expert"],["D","Hiring Manager"]].map(([a,r])=><div key={a} className="flex items-center gap-3 border-b border-foreground/10 pb-3"><span className="grid size-9 place-items-center bg-foreground text-white">{a}</span><span className="text-sm font-medium">{r}</span></div>)}</div></div><div className={cn(panel,"p-6 md:col-span-2")}><h3 className="font-semibold">Course focus areas</h3><div className="mt-4 flex flex-wrap gap-2">{["Spark/Kafka Streaming","Data Warehousing","ETL Pipelines","Data Quality & Schema Design"].map(x=><span key={x} className="border border-foreground/15 bg-muted px-3 py-2 text-xs">{x}</span>)}</div><h3 className="mt-7 font-semibold">Target difficulty</h3><div className="mt-3 grid grid-cols-4 gap-2">{["Easy","Medium","Hard","Expert"].map(x=><button key={x} onClick={()=>setDifficulty(x)} className={cn("border p-3 text-xs font-semibold",difficulty===x?"border-brand bg-brand text-white":"border-foreground/15")}>{x}</button>)}</div></div></div></> }
+function ConfirmSetup({company,role,domain,difficulty}:{company:string;role:string;domain:string;difficulty:string}) { return <><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Confirm mock<br/><span className="text-brand">interview setup.</span></h1><div className={cn(panel,"mt-9 divide-y divide-foreground/10")}>{[[BriefcaseBusiness,"Company",company],[UserRound,"Role",role],[Target,"Domain",domain],[Zap,"Difficulty",difficulty],[Headphones,"Interview mode","Assessment / Mock Interview"]].map(([I,l,v]:any)=><div key={l} className="grid grid-cols-[40px_150px_1fr] items-center p-5"><I className="size-5 text-brand"/><span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</span><b>{v}</b></div>)}</div></> }
+
+export function ProfilePage() {
+  const { candidate, cumulative, previousCumulative, profileComplete } = useCandidate();
   const delta = previousCumulative === null ? null : cumulative - previousCumulative;
-  const best = Math.max(...candidate.history.map(h => h.cumulative));
+  const best = Math.max(...candidate.history.map(h => h.cumulative), 0);
+  const p = candidate.profile;
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-7xl px-5 py-10 md:px-10">
 
     <section className={cn(panel,"overflow-hidden")}>
@@ -154,8 +187,10 @@ export function DashboardPage() {
     </section>
 
     <div className="mt-6 flex flex-wrap gap-2">
-      <Link to="/setup"><Button className={violetButton}><Plus/> Start New Mock Interview</Button></Link>
-      {[[UserRound,"View Profile","/profile"],[FileText,"Reports","/report"],[Route,"Roadmap","/roadmap"]].map(([I,t,to]:any)=><Link key={t} to={to}><Button variant="outline" className={outlineButton}><I/>{t}</Button></Link>)}
+      <Link to="/profile/edit"><Button className={violetButton}><NotebookPen/> Edit Profile</Button></Link>
+      <Link to="/setup"><Button variant="outline" className={outlineButton}><Plus/> Start New Mock Interview</Button></Link>
+      <Link to="/report"><Button variant="outline" className={outlineButton}><FileText/>Reports</Button></Link>
+      <Link to="/roadmap"><Button variant="outline" className={outlineButton}><Route/>Roadmap</Button></Link>
     </div>
 
     <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_.5fr]">
@@ -190,7 +225,12 @@ export function DashboardPage() {
         </div>
       </section>
       <aside className="space-y-5">
-        <div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile completion</h2><span className="font-mono text-sm text-brand">{candidate.photo?"96%":"88%"}</span></div><div className="mt-4 h-2 bg-muted"><div className="h-full bg-highlight" style={{width:candidate.photo?"96%":"88%"}}/></div><Link to="/profile" className="mt-3 inline-flex items-center text-xs text-brand">Complete profile <ChevronRight className="size-3"/></Link></div>
+        <div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile details</h2><span className={cn("font-mono text-[10px] uppercase tracking-widest",profileComplete?"text-success":"text-brand")}>{profileComplete?"Complete":"Incomplete"}</span></div>
+          <dl className="mt-4 space-y-2 text-xs">
+            {[["Resume",p.resumeName],["GitHub",p.github],["Institution",p.institution],["Degree",[p.degree,p.department].filter(Boolean).join(" · ")],["Graduation",p.graduationYear],["Certification",p.certificationName]].map(([l,v])=><div key={l} className="flex justify-between gap-3"><dt className="text-muted-foreground">{l}</dt><dd className="truncate text-right font-medium">{v||"—"}</dd></div>)}
+          </dl>
+          <Link to="/profile/edit" className="mt-4 inline-flex items-center text-xs text-brand">Edit profile <ChevronRight className="size-3"/></Link>
+        </div>
         <div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{competencies.map(([c,v])=><div key={c}><div className="mb-1 flex justify-between text-xs"><span>{c}</span><b>{v}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div>
         <div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">6 of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">Next: connect technical decisions to customer impact.</p></div>
       </aside>
@@ -198,29 +238,54 @@ export function DashboardPage() {
   </div><EchoAssistant/></main>;
 }
 
-const setupSteps = ["Target company","Target role","Domain & focus","AI proposal","Confirm"];
-export function SetupPage() {
-  const navigate=useNavigate(); const [step,setStep]=useState(0); const [company,setCompany]=useState("Google"); const [role,setRole]=useState("Senior Software Engineer"); const [domain,setDomain]=useState("Data Engineering"); const [difficulty,setDifficulty]=useState("Hard");
-  const companies=["Google","Microsoft","Amazon","Apple","Meta","Netflix","Uber"]; const roles=["Software Engineer","Senior Software Engineer","Staff Software Engineer","Frontend Engineer","Backend Engineer","Full Stack Engineer","Data Engineer"];
-  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="border-b border-foreground/15 bg-white px-5 py-6"><div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto">{setupSteps.map((s,i)=><button onClick={()=>setStep(i)} key={s} className={cn("flex min-w-40 flex-1 items-center gap-3 border-b-2 pb-3 text-left",i===step?"border-brand text-foreground":i<step?"border-success text-muted-foreground":"border-foreground/10 text-muted-foreground")}><span className={cn("grid size-7 shrink-0 place-items-center border font-mono text-xs",i===step&&"border-brand bg-brand text-white",i<step&&"border-success bg-success text-white")}>{i<step?<Check className="size-3"/>:i+1}</span><span className="text-xs font-semibold">{s}</span></button>)}</div></div>
-    <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[1fr_310px]"><section><Eyebrow>Interview configuration · Step {step+1} of 5</Eyebrow>{step===0&&<ChoiceStep title="Where do you want to interview?" subtitle="Choose a target company so Echo can tune the interview context." items={companies} value={company} setValue={setCompany}/>} {step===1&&<ChoiceStep title="Which role are you targeting?" subtitle="This determines the expected scope and interview panel." items={roles} value={role} setValue={setRole}/>} {step===2&&<ChoiceStep title="Choose your domain & competency focus." subtitle="Select the course or domain that should guide the interview." items={["Data Engineering","Backend Systems","Frontend Architecture","Machine Learning","Product Engineering"]} value={domain} setValue={setDomain}/>} {step===3&&<Proposal difficulty={difficulty} setDifficulty={setDifficulty}/>} {step===4&&<ConfirmSetup company={company} role={role} domain={domain} difficulty={difficulty}/>}<div className="mt-10 flex justify-between"><Button disabled={step===0} onClick={()=>setStep(x=>x-1)} variant="outline" className={outlineButton}>Back</Button>{step<4?<Button onClick={()=>setStep(x=>x+1)} className={violetButton}>Continue <ArrowRight/></Button>:<Button onClick={()=>navigate({to:"/profile"})} className={violetButton}>Proceed to Candidate Information <ArrowRight/></Button>}</div></section>
-      <aside><div className={cn(panel,"sticky top-24 p-6")}><EchoOrb small mode="speaking"/><p className="mt-6 font-mono text-[10px] uppercase tracking-widest text-brand">Echo insight</p><p className="mt-3 text-lg leading-7">{step<2?"I’ll use this to calibrate scope, seniority, and likely interview patterns.":step===2?"Your focus will shape both the questions and how evidence is scored.":"I’ve inferred a three-person panel based on the role. Your interview will emphasize system design and technical depth."}</p><div className="mt-6 border-t border-foreground/15 pt-4 text-xs text-muted-foreground">Say “Hey Echo, configure this interview for me.”</div></div></aside></div><EchoAssistant/></main>;
-}
-
-function ChoiceStep({title,subtitle,items,value,setValue}:{title:string;subtitle:string;items:string[];value:string;setValue:(v:string)=>void}) { return <><h1 className="max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">{title}</h1><p className="mt-4 text-muted-foreground">{subtitle}</p><div className="mt-9 grid gap-3 sm:grid-cols-2">{items.map((x,i)=><button onClick={()=>setValue(x)} key={x} className={cn("flex min-h-20 items-center justify-between border p-5 text-left font-semibold transition",value===x?"border-brand bg-brand text-white shadow-[5px_5px_0_#f2dc47]":"border-foreground/15 bg-white hover:border-brand")}><span><i className="mr-3 font-mono text-xs not-italic opacity-50">0{i+1}</i>{x}</span>{value===x&&<Check/>}</button>)}</div></> }
-function Proposal({difficulty,setDifficulty}:{difficulty:string;setDifficulty:(v:string)=>void}) { const weights=[["Technical",35],["System Design",30],["Problem Solving",20],["Behavioral",10],["Communication",5]] as const; return <><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Your adaptive<br/><span className="text-brand">AI proposal.</span></h1><div className="mt-9 grid gap-5 md:grid-cols-2"><div className={cn(panel,"p-6")}><h3 className="font-semibold">Competency weighting</h3><div className="mt-5 space-y-4">{weights.map(([n,v])=><div key={n}><div className="flex justify-between text-xs"><span>{n}</span><b>{v}%</b></div><div className="mt-1 h-2 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div><div className={cn(panel,"p-6")}><h3 className="font-semibold">Inferred interview panel</h3><div className="mt-5 space-y-3">{[["A","Technical Interviewer"],["M","Domain Expert"],["D","Hiring Manager"]].map(([a,r])=><div key={a} className="flex items-center gap-3 border-b border-foreground/10 pb-3"><span className="grid size-9 place-items-center bg-foreground text-white">{a}</span><span className="text-sm font-medium">{r}</span></div>)}</div></div><div className={cn(panel,"p-6 md:col-span-2")}><h3 className="font-semibold">Course focus areas</h3><div className="mt-4 flex flex-wrap gap-2">{["Spark/Kafka Streaming","Data Warehousing","ETL Pipelines","Data Quality & Schema Design"].map(x=><span key={x} className="border border-foreground/15 bg-muted px-3 py-2 text-xs">{x}</span>)}</div><h3 className="mt-7 font-semibold">Target difficulty</h3><div className="mt-3 grid grid-cols-4 gap-2">{["Easy","Medium","Hard","Expert"].map(x=><button key={x} onClick={()=>setDifficulty(x)} className={cn("border p-3 text-xs font-semibold",difficulty===x?"border-brand bg-brand text-white":"border-foreground/15")}>{x}</button>)}</div></div></div></> }
-function ConfirmSetup({company,role,domain,difficulty}:{company:string;role:string;domain:string;difficulty:string}) { return <><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Confirm mock<br/><span className="text-brand">interview setup.</span></h1><div className={cn(panel,"mt-9 divide-y divide-foreground/10")}>{[[BriefcaseBusiness,"Company",company],[UserRound,"Role",role],[Target,"Domain",domain],[Zap,"Difficulty",difficulty],[Headphones,"Interview mode","Assessment / Mock Interview"]].map(([I,l,v]:any)=><div key={l} className="grid grid-cols-[40px_150px_1fr] items-center p-5"><I className="size-5 text-brand"/><span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</span><b>{v}</b></div>)}</div></> }
-
-export function ProfilePage() {
-  const navigate=useNavigate(); const [file,setFile]=useState("");
-  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><Eyebrow>Context builder</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Personal Information Portal</h1><p className="mt-3 max-w-2xl text-muted-foreground">Provide your resume, project repository, education and certifications to personalize the AI mock interviewer.</p></div><div className="w-56"><p className="flex justify-between font-mono text-[10px] uppercase"><span>Context complete</span><b>72%</b></p><div className="mt-2 h-2 bg-white"><div className="h-full w-[72%] bg-brand"/></div></div></div>
-    <form onSubmit={e=>{e.preventDefault();navigate({to:"/system-check"})}} className="mt-10 grid gap-6 lg:grid-cols-[1fr_1fr]">
-      <FormSection number="A" title="Candidate resume" icon={<FileText/>}><label className="grid min-h-40 cursor-pointer place-items-center border border-dashed border-foreground/30 bg-muted/50 text-center hover:border-brand"><input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e=>setFile(e.target.files?.[0]?.name||"")}/><div><Upload className="mx-auto mb-3 text-brand"/><b>{file||"Drop your resume or browse"}</b><p className="mt-1 text-xs text-muted-foreground">PDF, DOC, DOCX · Maximum 10MB</p></div></label></FormSection>
-      <FormSection number="B" title="Best project GitHub link" icon={<Github/>}><label className="text-xs font-semibold">Repository URL<input type="url" defaultValue="https://github.com/arjunsharma/distributed-cache" className="mt-2 h-11 w-full border border-foreground/20 px-3 outline-none focus:border-brand"/></label><p className="mt-3 text-xs leading-5 text-muted-foreground">The interviewer will evaluate code structure and architecture from this project.</p></FormSection>
-      <FormSection number="C" title="Educational details" icon={<GraduationCap/>}><div className="grid gap-4 sm:grid-cols-2">{[["Institution / College / University","Indian Institute of Technology"],["Degree","B.Tech"],["Department / Branch","Computer Science"],["Graduation Year","2021"]].map(([l,v])=><label key={l} className="text-xs font-semibold">{l}<input defaultValue={v} className="mt-2 h-11 w-full border border-foreground/20 px-3 outline-none focus:border-brand"/></label>)}</div></FormSection>
-      <FormSection number="D" title="Certifications" icon={<Award/>}><div className="grid gap-3 sm:grid-cols-2">{[["Certification Name","AWS Solutions Architect"],["Issuing Organization","Amazon Web Services"],["Year / Issue Date","2024"],["Credential URL","https://credential.example"]].map(([l,v])=><label key={l} className="text-xs font-semibold">{l}<input defaultValue={v} className="mt-2 h-11 w-full border border-foreground/20 px-3 outline-none focus:border-brand"/></label>)}</div><Button type="button" variant="outline" size="sm" className={cn(outlineButton,"mt-4")}><Plus/> Add certification</Button></FormSection>
-      <div className="flex items-center justify-between border-t border-foreground/15 pt-6 lg:col-span-2"><p className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles className="size-4 text-brand"/> EchoSphere is building your interview context…</p><Button className={violetButton}>Save & Continue to System Check <ArrowRight/></Button></div>
-    </form></div><EchoAssistant/></main>;
+export function EditProfilePage() {
+  const navigate=useNavigate();
+  const { candidate, setProfile }=useCandidate();
+  const [form,setForm]=useState<CandidateProfile>(candidate.profile);
+  const [saved,setSaved]=useState(false);
+  const [touched,setTouched]=useState(false);
+  useEffect(()=>{setForm(candidate.profile)},[candidate.profile]);
+  const set=(k:keyof CandidateProfile)=>(v:string)=>{setForm(f=>({...f,[k]:v.slice(0,300)}));setSaved(false)};
+  const missing=requiredProfileFields.filter(f=>!form[f].trim());
+  const complete=missing.length===0;
+  const filled=Object.values(form).filter(v=>v.trim()).length;
+  const percent=Math.round((filled/Object.keys(form).length)*100);
+  function submit(e:React.FormEvent){
+    e.preventDefault(); setTouched(true);
+    if(!complete) return;
+    setProfile({...form,github:form.github.trim()}); setSaved(true);
+    window.setTimeout(()=>navigate({to:"/profile"}),450);
+  }
+  const err=(k:keyof CandidateProfile)=>touched&&requiredProfileFields.includes(k)&&!form[k].trim();
+  const field=(k:keyof CandidateProfile,label:string,placeholder="")=><label key={k} className="text-xs font-semibold">{label}{requiredProfileFields.includes(k)&&<span className="text-brand"> *</span>}
+    <input value={form[k]} placeholder={placeholder} onChange={e=>set(k)(e.target.value)} className={cn("mt-2 h-11 w-full border px-3 outline-none focus:border-brand",err(k)?"border-destructive":"border-foreground/20")}/>
+    {err(k)&&<span className="mt-1 block font-normal text-[11px] text-destructive">This field is required.</span>}
+  </label>;
+  return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div><Eyebrow>Context builder</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Edit Profile</h1><p className="mt-3 max-w-2xl text-muted-foreground">Resume, project repository, education and certifications personalize your AI mock interviewer. Required fields must be filled before you can start an interview.</p></div>
+      <div className="w-56"><p className="flex justify-between font-mono text-[10px] uppercase"><span>Context complete</span><b>{percent}%</b></p><div className="mt-2 h-2 bg-white"><div className="h-full bg-brand" style={{width:`${percent}%`}}/></div></div>
+    </div>
+    <form onSubmit={submit} className="mt-10 grid gap-6 lg:grid-cols-[1fr_1fr]">
+      <FormSection number="A" title="Candidate resume" icon={<FileText/>}>
+        <label className={cn("grid min-h-40 cursor-pointer place-items-center border border-dashed bg-muted/50 text-center hover:border-brand",err("resumeName")?"border-destructive":"border-foreground/30")}>
+          <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e=>set("resumeName")(e.target.files?.[0]?.name||"")}/>
+          <div><Upload className="mx-auto mb-3 text-brand"/><b>{form.resumeName||"Drop your resume or browse"}</b><p className="mt-1 text-xs text-muted-foreground">PDF, DOC, DOCX · Maximum 10MB</p></div>
+        </label>
+        {err("resumeName")&&<p className="mt-2 text-[11px] text-destructive">A resume is required.</p>}
+      </FormSection>
+      <FormSection number="B" title="Best project GitHub link" icon={<Github/>}>
+        {field("github","Repository URL","https://github.com/username/project")}
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">The interviewer will evaluate code structure and architecture from this project.</p>
+      </FormSection>
+      <FormSection number="C" title="Educational details" icon={<GraduationCap/>}><div className="grid gap-4 sm:grid-cols-2">{field("institution","Institution / College / University")}{field("degree","Degree")}{field("department","Department / Branch")}{field("graduationYear","Graduation Year")}</div></FormSection>
+      <FormSection number="D" title="Certifications" icon={<Award/>}><div className="grid gap-3 sm:grid-cols-2">{field("certificationName","Certification Name")}{field("certificationOrg","Issuing Organization")}{field("certificationYear","Year / Issue Date")}{field("certificationUrl","Credential URL")}</div></FormSection>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-foreground/15 pt-6 lg:col-span-2">
+        <p className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles className="size-4 text-brand"/> {saved?"Profile saved.":touched&&!complete?`${missing.length} required field(s) still missing.`:"EchoSphere is building your interview context…"}</p>
+        <div className="flex gap-2"><Button type="button" variant="outline" className={outlineButton} onClick={()=>navigate({to:"/profile"})}>Cancel</Button><Button className={violetButton}>Save Profile <ArrowRight/></Button></div>
+      </div>
+    </form>
+  </div><EchoAssistant/></main>;
 }
 function FormSection({number,title,icon,children}:{number:string;title:string;icon:ReactNode;children:ReactNode}) { return <section className={cn(panel,"p-6")}><div className="mb-6 flex items-center justify-between"><div className="flex items-center gap-3"><span className="font-mono text-xs text-brand">{number}</span><h2 className="text-xl font-semibold">{title}</h2></div><span className="text-brand">{icon}</span></div>{children}</section> }
 
