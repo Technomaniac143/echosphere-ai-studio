@@ -95,7 +95,7 @@ export function LandingPage() {
         <div className="mt-12 flex items-center gap-5 border-t border-foreground/15 pt-5 text-xs text-muted-foreground"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-brand" /> Encrypted voice & identity</span><span className="flex items-center gap-2"><Zap className="size-4 text-brand" /> Adaptive in real time</span></div>
       </div>
       <div className="relative min-h-[560px] overflow-hidden bg-brand p-6 text-white md:p-10">
-        <div className="absolute -right-20 top-10 size-72 rounded-full border border-white/15" /><div className="absolute -right-2 top-28 size-48 rounded-full border border-highlight/40" />
+        <HeroPanelAnimation />
         <div className="relative mx-auto flex h-full max-w-xl flex-col justify-center">
           <div className="mb-4 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-white/65"><span>Live adaptive panel</span><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-highlight" /> Listening</span></div>
           <div className="border border-white/20 bg-[#20192a]/90 p-5 shadow-[10px_10px_0_#f2dc47] md:p-7">
