@@ -23,7 +23,6 @@ import { Route as AuthenticatedVideoTestRouteImport } from './routes/_authentica
 import { Route as AuthenticatedInterviewThreadIdRouteImport } from './routes/_authenticated/interview.$threadId'
 import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile.index'
 import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile.edit'
-import { Route as ApiPublicSchemaCheckRouteImport } from './routes/api/public/schema-check'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -98,11 +97,6 @@ const AuthenticatedProfileEditRoute =
     path: '/profile/edit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicSchemaCheckRoute = ApiPublicSchemaCheckRouteImport.update({
-  id: '/api/public/schema-check',
-  path: '/api/public/schema-check',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,7 +111,6 @@ export interface FileRoutesByFullPath {
   '/video-test': typeof AuthenticatedVideoTestRoute
   '/interview/$threadId': typeof AuthenticatedInterviewThreadIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
-  '/api/public/schema-check': typeof ApiPublicSchemaCheckRoute
   '/profile/': typeof AuthenticatedProfileIndexRoute
 }
 export interface FileRoutesByTo {
@@ -133,7 +126,6 @@ export interface FileRoutesByTo {
   '/video-test': typeof AuthenticatedVideoTestRoute
   '/interview/$threadId': typeof AuthenticatedInterviewThreadIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
-  '/api/public/schema-check': typeof ApiPublicSchemaCheckRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
 }
 export interface FileRoutesById {
@@ -151,7 +143,6 @@ export interface FileRoutesById {
   '/_authenticated/video-test': typeof AuthenticatedVideoTestRoute
   '/_authenticated/interview/$threadId': typeof AuthenticatedInterviewThreadIdRoute
   '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
-  '/api/public/schema-check': typeof ApiPublicSchemaCheckRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
 }
 export interface FileRouteTypes {
@@ -169,7 +160,6 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
-    | '/api/public/schema-check'
     | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -185,7 +175,6 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
-    | '/api/public/schema-check'
     | '/profile'
   id:
     | '__root__'
@@ -202,7 +191,6 @@ export interface FileRouteTypes {
     | '/_authenticated/video-test'
     | '/_authenticated/interview/$threadId'
     | '/_authenticated/profile/edit'
-    | '/api/public/schema-check'
     | '/_authenticated/profile/'
   fileRoutesById: FileRoutesById
 }
@@ -211,7 +199,6 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   PortalRoute: typeof PortalRoute
-  ApiPublicSchemaCheckRoute: typeof ApiPublicSchemaCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -314,13 +301,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileEditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/schema-check': {
-      id: '/api/public/schema-check'
-      path: '/api/public/schema-check'
-      fullPath: '/api/public/schema-check'
-      preLoaderRoute: typeof ApiPublicSchemaCheckRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -358,7 +338,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   PortalRoute: PortalRoute,
-  ApiPublicSchemaCheckRoute: ApiPublicSchemaCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
