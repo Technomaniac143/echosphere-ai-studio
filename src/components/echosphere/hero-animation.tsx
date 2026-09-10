@@ -23,9 +23,9 @@ export function HeroPanelAnimation() {
             ))}
           </span>
         </span>
-        {nodes.map((n, i) => (
-          <span key={n.label} className="echo-orbit absolute left-1/2 top-1/2 size-full -translate-x-1/2 -translate-y-1/2" style={{ animationDelay: n.delay }}>
-            <span className="absolute left-1/2 top-0 -translate-x-1/2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white/85 backdrop-blur" style={{ transform: `translateX(-50%) rotate(${-i * 90}deg)` }}>
+        {nodes.map((n) => (
+          <span key={n.label} className="echo-orbit absolute inset-0" style={{ animationDelay: n.delay }}>
+            <span className="echo-orbit-label absolute left-1/2 top-0 -translate-x-1/2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white/85 backdrop-blur" style={{ animationDelay: n.delay }}>
               {n.label}
             </span>
           </span>
