@@ -99,7 +99,11 @@ export function LiveInterviewer({
             })),
         );
       });
-      anam.addListener("CONNECTION_CLOSED" as any, () => setStatus("idle"));
+      anam.addListener("CONNECTION_CLOSED" as any, (reason: any) => {
+        console.log("[live] connection closed", reason);
+        setStatus("idle");
+      });
+      anam.addListener("VIDEO_PLAY_STARTED" as any, () => console.log("[live] video playing"));
 
       console.log("[live] anam token ok, streaming");
       await anam.streamToVideoElement(videoId, micStream);
