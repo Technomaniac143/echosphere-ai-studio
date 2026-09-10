@@ -7,6 +7,7 @@ import {
   Mic, MicOff, MonitorUp, MoreHorizontal, Network, NotebookPen, Pause, Play, Plus,
   Radio, RefreshCw, Route, Send, ShieldCheck, Sparkles, Target, Upload, UserRound,
   Video, VideoOff, Volume2, WandSparkles, X, Zap,
+  Aperture, Code2, PenTool, Eye, TrendingUp, PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
