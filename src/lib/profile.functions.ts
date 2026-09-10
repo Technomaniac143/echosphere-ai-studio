@@ -61,6 +61,7 @@ export const upsertProfile = createServerFn({ method: "POST" })
         graduation_year: graduationYear,
         certifications,
         ...(data.photo_path ? { photo_path: data.photo_path } : {}),
+        resume_path: data.resume_path ?? null,
         profile_completion: completion,
       } as any, { onConflict: "user_id" })
       .select()
