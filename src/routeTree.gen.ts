@@ -20,6 +20,7 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SystemCheckRouteImport } from './routes/system-check'
 import { Route as VideoTestRouteImport } from './routes/video-test'
 import { Route as InterviewThreadIdRouteImport } from './routes/interview.$threadId'
+import { Route as ProfileEditRouteImport } from './routes/profile.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,32 +77,39 @@ const InterviewThreadIdRoute = InterviewThreadIdRouteImport.update({
   path: '/interview/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileEditRoute = ProfileEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ProfileRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/portal': typeof PortalRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/report': typeof ReportRoute
   '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
   '/system-check': typeof SystemCheckRoute
   '/video-test': typeof VideoTestRoute
   '/interview/$threadId': typeof InterviewThreadIdRoute
+  '/profile/edit': typeof ProfileEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/portal': typeof PortalRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/report': typeof ReportRoute
   '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
   '/system-check': typeof SystemCheckRoute
   '/video-test': typeof VideoTestRoute
   '/interview/$threadId': typeof InterviewThreadIdRoute
+  '/profile/edit': typeof ProfileEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -109,13 +117,14 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/portal': typeof PortalRoute
-  '/profile': typeof ProfileRoute
+  '/profile': typeof ProfileRouteWithChildren
   '/report': typeof ReportRoute
   '/roadmap': typeof RoadmapRoute
   '/setup': typeof SetupRoute
   '/system-check': typeof SystemCheckRoute
   '/video-test': typeof VideoTestRoute
   '/interview/$threadId': typeof InterviewThreadIdRoute
+  '/profile/edit': typeof ProfileEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/system-check'
     | '/video-test'
     | '/interview/$threadId'
+    | '/profile/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/system-check'
     | '/video-test'
     | '/interview/$threadId'
+    | '/profile/edit'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/system-check'
     | '/video-test'
     | '/interview/$threadId'
+    | '/profile/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -164,7 +176,7 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   PortalRoute: typeof PortalRoute
-  ProfileRoute: typeof ProfileRoute
+  ProfileRoute: typeof ProfileRouteWithChildren
   ReportRoute: typeof ReportRoute
   RoadmapRoute: typeof RoadmapRoute
   SetupRoute: typeof SetupRoute
@@ -252,15 +264,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterviewThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/edit': {
+      id: '/profile/edit'
+      path: '/edit'
+      fullPath: '/profile/edit'
+      preLoaderRoute: typeof ProfileEditRouteImport
+      parentRoute: typeof ProfileRoute
+    }
   }
 }
+
+interface ProfileRouteChildren {
+  ProfileEditRoute: typeof ProfileEditRoute
+}
+
+const ProfileRouteChildren: ProfileRouteChildren = {
+  ProfileEditRoute: ProfileEditRoute,
+}
+
+const ProfileRouteWithChildren =
+  ProfileRoute._addFileChildren(ProfileRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   PortalRoute: PortalRoute,
-  ProfileRoute: ProfileRoute,
+  ProfileRoute: ProfileRouteWithChildren,
   ReportRoute: ReportRoute,
   RoadmapRoute: RoadmapRoute,
   SetupRoute: SetupRoute,
