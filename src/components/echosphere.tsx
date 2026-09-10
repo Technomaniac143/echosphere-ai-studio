@@ -128,11 +128,78 @@ const sessions = [
   {state:"SCHEDULED",company:"Microsoft",role:"Staff Software Engineer",date:"May 28, 2025",score:"—",action:"Details"},
 ];
 export function DashboardPage() {
+  const { candidate, cumulative, previousCumulative } = useCandidate();
+  const delta = previousCumulative === null ? null : cumulative - previousCumulative;
+  const best = Math.max(...candidate.history.map(h => h.cumulative));
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-7xl px-5 py-10 md:px-10">
-    <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end"><div><Eyebrow>Candidate workspace</Eyebrow><h1 className="text-4xl font-semibold tracking-[-.04em] md:text-6xl">Welcome back, <span className="text-brand">Arjun.</span></h1><p className="mt-2 text-muted-foreground">arjun.sharma@example.com</p></div><div className="flex flex-wrap gap-2"><Link to="/setup"><Button className={violetButton}><Plus/> Start New Mock Interview</Button></Link>{[[UserRound,"View Profile","/profile"],[FileText,"Reports","/report"],[Route,"Roadmap","/roadmap"]].map(([I,t,to]:any)=><Link key={t} to={to}><Button variant="outline" className={outlineButton}><I/>{t}</Button></Link>)}</div></div>
-    <section className="mt-10 grid border border-foreground/15 bg-white sm:grid-cols-2 lg:grid-cols-4">{[[Clock3,"Upcoming","1"],[CheckCircle2,"Completed","7"],[Award,"Average score","78"],[UserRound,"Profile","88%"]].map(([I,l,v]:any)=><div key={l} className="border-b border-foreground/15 p-5 last:border-0 sm:border-r lg:border-b-0"><div className="flex justify-between text-muted-foreground"><span className="font-mono text-[10px] uppercase tracking-widest">{l}</span><I className="size-4"/></div><p className="mt-8 text-4xl font-semibold">{v}</p></div>)}</section>
-    <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_.6fr]"><section><div className="mb-4 flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Interview history</p><h2 className="mt-1 text-2xl font-semibold">Your sessions</h2></div><span className="text-xs text-muted-foreground">3 recent</span></div><div className="border-t border-foreground/20">{sessions.map((s,i)=><article key={s.company} className="grid items-center gap-4 border-b border-foreground/15 bg-white p-5 md:grid-cols-[36px_1fr_120px_80px_120px]"><span className="font-mono text-xs text-muted-foreground">0{i+1}</span><div><span className={cn("font-mono text-[9px] tracking-widest",s.state==="COMPLETED"?"text-success":s.state==="IN PROGRESS"?"text-brand":"text-muted-foreground")}>● {s.state}</span><h3 className="mt-1 font-semibold">{s.company} · {s.role}</h3></div><p className="text-xs text-muted-foreground">{s.date}</p><p className="text-2xl font-semibold">{s.score}</p><Link to={(s.action==="Resume"?"/interview/demo":s.action==="View Report"?"/report":"/setup") as any}><Button variant="outline" size="sm" className={outlineButton}>{s.action}</Button></Link></article>)}</div></section>
-      <aside className="space-y-5"><div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile completion</h2><span className="font-mono text-sm text-brand">88%</span></div><div className="mt-4 h-2 bg-muted"><div className="h-full w-[88%] bg-highlight"/></div><Link to="/profile" className="mt-3 inline-flex items-center text-xs text-brand">Complete profile <ChevronRight className="size-3"/></Link></div><div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{competencies.map(([c,v])=><div key={c}><div className="mb-1 flex justify-between text-xs"><span>{c}</span><b>{v}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div><div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">6 of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">Next: connect technical decisions to customer impact.</p></div></aside></div>
+
+    <section className={cn(panel,"overflow-hidden")}>
+      <div className="grid gap-8 p-7 md:grid-cols-[auto_1fr_auto] md:items-center md:p-9">
+        <div className="relative size-28 overflow-hidden rounded-full border-4 border-brand bg-muted shadow-[6px_6px_0_#f2dc47]">
+          {candidate.photo
+            ? <img src={candidate.photo} alt={`${candidate.name} profile photo`} className="size-full object-cover"/>
+            : <span className="grid size-full place-items-center text-3xl font-semibold text-brand">{candidate.name.split(" ").map(w=>w[0]).join("")}</span>}
+        </div>
+        <div>
+          <Eyebrow>Candidate portfolio</Eyebrow>
+          <h1 className="text-4xl font-semibold tracking-[-.04em] md:text-5xl">{candidate.name}</h1>
+          <p className="mt-2 text-muted-foreground">{candidate.email} · Backend Engineer track</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="border border-foreground/15 bg-muted px-3 py-1.5">{candidate.history.length} interviews completed</span>
+            <span className="border border-foreground/15 bg-muted px-3 py-1.5">Best score {best}</span>
+            {!candidate.photo&&<Link to="/system-check" className="border border-brand px-3 py-1.5 text-brand">Add your photo</Link>}
+          </div>
+        </div>
+        <div className="bg-brand p-6 text-center text-white">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Cumulative score</p>
+          <p className="mt-2 text-7xl font-semibold leading-none">{cumulative}</p>
+          {delta!==null&&<p className="mt-3 flex items-center justify-center gap-1 text-xs text-white/85"><TrendingUp className="size-3"/> {delta>=0?`+${delta}`:delta} vs previous</p>}
+        </div>
+      </div>
+    </section>
+
+    <div className="mt-6 flex flex-wrap gap-2">
+      <Link to="/setup"><Button className={violetButton}><Plus/> Start New Mock Interview</Button></Link>
+      {[[UserRound,"View Profile","/profile"],[FileText,"Reports","/report"],[Route,"Roadmap","/roadmap"]].map(([I,t,to]:any)=><Link key={t} to={to}><Button variant="outline" className={outlineButton}><I/>{t}</Button></Link>)}
+    </div>
+
+    <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_.5fr]">
+      <section>
+        <div className="mb-5 flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Interview history</p><h2 className="mt-1 text-2xl font-semibold">Completed interviews</h2></div><span className="text-xs text-muted-foreground">{candidate.history.length} records</span></div>
+        <div className="grid gap-5 md:grid-cols-2">
+          {candidate.history.map(record=><article key={record.id} className={cn(panel,"flex flex-col p-5")}>
+            <div className="flex items-start gap-3">
+              <span className="size-11 shrink-0 overflow-hidden rounded-full border border-foreground/15 bg-muted">
+                {record.photo
+                  ? <img src={record.photo} alt="" className="size-full object-cover"/>
+                  : <span className="grid size-full place-items-center text-xs font-semibold text-brand">{candidate.name.split(" ").map(w=>w[0]).join("")}</span>}
+              </span>
+              <div className="flex-1">
+                <p className="font-mono text-[9px] uppercase tracking-widest text-brand">{record.domain}</p>
+                <h3 className="mt-1 font-semibold leading-5">{record.company} · {record.role}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{record.date}</p>
+              </div>
+              <div className="text-right"><p className="text-3xl font-semibold leading-none">{record.cumulative}</p><p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Cumulative</p></div>
+            </div>
+            <div className="mt-5 grid gap-2">
+              {record.competencies.map(c=><div key={c.name}>
+                <div className="flex justify-between text-[11px]"><span className="text-muted-foreground">{c.name}</span><b>{c.score}</b></div>
+                <div className="mt-1 h-1.5 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
+              </div>)}
+            </div>
+            <div className="mt-5 flex gap-2 border-t border-foreground/10 pt-4">
+              <Link to="/report"><Button size="sm" variant="outline" className={outlineButton}>View Report</Button></Link>
+              <Link to="/setup"><Button size="sm" variant="ghost">Practice again</Button></Link>
+            </div>
+          </article>)}
+        </div>
+      </section>
+      <aside className="space-y-5">
+        <div className={cn(panel,"p-5")}><div className="flex justify-between"><h2 className="font-semibold">Profile completion</h2><span className="font-mono text-sm text-brand">{candidate.photo?"96%":"88%"}</span></div><div className="mt-4 h-2 bg-muted"><div className="h-full bg-highlight" style={{width:candidate.photo?"96%":"88%"}}/></div><Link to="/profile" className="mt-3 inline-flex items-center text-xs text-brand">Complete profile <ChevronRight className="size-3"/></Link></div>
+        <div className={cn(panel,"p-5")}><h2 className="font-semibold">Competency overview</h2><div className="mt-5 space-y-3">{competencies.map(([c,v])=><div key={c}><div className="mb-1 flex justify-between text-xs"><span>{c}</span><b>{v}</b></div><div className="h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${v}%`}}/></div></div>)}</div></div>
+        <div className={cn(panel,"p-5")}><div className="flex justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Roadmap progress</p><p className="mt-2 text-2xl font-semibold">6 of 10</p></div><Route className="text-brand"/></div><p className="mt-4 text-xs text-muted-foreground">Next: connect technical decisions to customer impact.</p></div>
+      </aside>
+    </div>
   </div><EchoAssistant/></main>;
 }
 
