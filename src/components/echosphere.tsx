@@ -14,6 +14,13 @@ import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, Pro
 import alexImage from "@/assets/interviewer-alex.jpg";
 import candidateImage from "@/assets/candidate-arjun.jpg";
 import { cn } from "@/lib/utils";
+import { useCandidate } from "@/lib/candidate-store";
+import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
+import { AgentPanel, useAgentRotation } from "@/components/echosphere/agent-panel";
+import { useProctoring } from "@/components/echosphere/use-proctoring";
+
+const CodeEditorPanel = lazy(() => import("@/components/echosphere/code-editor"));
+const WhiteboardPanel = lazy(() => import("@/components/echosphere/whiteboard"));
 
 type EchoMode = "idle" | "listening" | "thinking" | "speaking";
 
