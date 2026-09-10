@@ -585,13 +585,17 @@ export function ReportPage() {
 
   const score = iv?.['overall_score'] ?? latest?.overall_score ?? cumulative ?? 0;
   const compScores = (iv?.['competency_scores'] as any[]) ?? (latest?.competency_scores as any[]) ?? [];
-  const strengths = iv?.['strengths'] ?? latest?.strengths ?? ["Strong debugging ability","Good backend fundamentals","Clear logical communication","Ownership and teamwork examples"];
-  const improvements = iv?.['improvements'] ?? latest?.improvements ?? ["Develop advanced technical depth","Connect implementation decisions to user impact","Quantify outcomes with clearer metrics"];
-  const panelScores = (iv?.['panel_scores'] as any[]) ?? [["Alex","Technical Interviewer",84],["Maya","Product Manager",68],["Daniel","Hiring Manager",81]];
+  const strengths = iv?.['strengths'] ?? latest?.strengths ?? [];
+  const improvements = iv?.['improvements'] ?? latest?.improvements ?? [];
+  const rawPanelScores = (iv?.['panel_scores'] as any[]) ?? (latest?.panel_scores as any[]) ?? [];
+  const panelScores = rawPanelScores.length
+    ? rawPanelScores.map((p: any) => [p.name ?? "Interviewer", p.role ?? "Panel", Math.round(p.score ?? 0)])
+    : [];
   const recommendation = iv?.['recommendation'] ?? latest?.recommendation ?? (score>=80?"Strong Hire":score>=70?"Hire":"Needs practice");
   const displayCompetencies = compScores.length
     ? compScores.map((c:any,i:number)=>({name:c.skill||c.name,score:Math.round(c.score),justification:c.justification}))
-    : competencies.map(([name,score])=>({name,score,justification:""}));
+    : [];
+  const fallbackCompetencies = competencies.map(([name,score])=>({name,score,justification:""}));
 
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">{candidate.name} &middot; {iv?.['role']||latest?.role||"Interview"} &middot; {iv?.['company']||latest?.company||""} {iv?.['created_at'] ? new Date(iv?.['created_at']).toLocaleDateString() : ""}</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
     <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">{interview ? "Interview score" : "Cumulative score"}</p><p className="mt-5 text-8xl font-semibold tracking-tight">{score}</p><p className="mt-2 text-sm">{recommendation}</p>{interview && previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {score-previousCumulative>=0?"+":""}{score-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">91%</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{strengths.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{improvements.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>)}</ul></div></section>
