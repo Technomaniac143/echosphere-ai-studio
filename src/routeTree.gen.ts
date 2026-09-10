@@ -10,31 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AnalysisRouteImport } from './routes/analysis'
-import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PortalRouteImport } from './routes/portal'
-import { Route as ReportRouteImport } from './routes/report'
-import { Route as RoadmapRouteImport } from './routes/roadmap'
-import { Route as SetupRouteImport } from './routes/setup'
-import { Route as SystemCheckRouteImport } from './routes/system-check'
-import { Route as VideoTestRouteImport } from './routes/video-test'
-import { Route as InterviewThreadIdRouteImport } from './routes/interview.$threadId'
-import { Route as ProfileIndexRouteImport } from './routes/profile.index'
-import { Route as ProfileEditRouteImport } from './routes/profile.edit'
+import { Route as AuthenticatedAnalysisRouteImport } from './routes/_authenticated/analysis'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedReportRouteImport } from './routes/_authenticated/report'
+import { Route as AuthenticatedRoadmapRouteImport } from './routes/_authenticated/roadmap'
+import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
+import { Route as AuthenticatedSystemCheckRouteImport } from './routes/_authenticated/system-check'
+import { Route as AuthenticatedVideoTestRouteImport } from './routes/_authenticated/video-test'
+import { Route as AuthenticatedInterviewThreadIdRouteImport } from './routes/_authenticated/interview.$threadId'
+import { Route as AuthenticatedProfileIndexRouteImport } from './routes/_authenticated/profile.index'
+import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile.edit'
+import { Route as ApiPublicSchemaCheckRouteImport } from './routes/api/public/schema-check'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnalysisRoute = AnalysisRouteImport.update({
-  id: '/analysis',
-  path: '/analysis',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -42,97 +44,124 @@ const PortalRoute = PortalRouteImport.update({
   path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReportRoute = ReportRouteImport.update({
+const AuthenticatedAnalysisRoute = AuthenticatedAnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportRoute = AuthenticatedReportRouteImport.update({
   id: '/report',
   path: '/report',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const RoadmapRoute = RoadmapRouteImport.update({
+const AuthenticatedRoadmapRoute = AuthenticatedRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const SetupRoute = SetupRouteImport.update({
+const AuthenticatedSetupRoute = AuthenticatedSetupRouteImport.update({
   id: '/setup',
   path: '/setup',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const SystemCheckRoute = SystemCheckRouteImport.update({
-  id: '/system-check',
-  path: '/system-check',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VideoTestRoute = VideoTestRouteImport.update({
+const AuthenticatedSystemCheckRoute =
+  AuthenticatedSystemCheckRouteImport.update({
+    id: '/system-check',
+    path: '/system-check',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVideoTestRoute = AuthenticatedVideoTestRouteImport.update({
   id: '/video-test',
   path: '/video-test',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const InterviewThreadIdRoute = InterviewThreadIdRouteImport.update({
-  id: '/interview/$threadId',
-  path: '/interview/$threadId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileIndexRoute = ProfileIndexRouteImport.update({
-  id: '/profile/',
-  path: '/profile/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileEditRoute = ProfileEditRouteImport.update({
-  id: '/profile/edit',
-  path: '/profile/edit',
+const AuthenticatedInterviewThreadIdRoute =
+  AuthenticatedInterviewThreadIdRouteImport.update({
+    id: '/interview/$threadId',
+    path: '/interview/$threadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProfileIndexRoute =
+  AuthenticatedProfileIndexRouteImport.update({
+    id: '/profile/',
+    path: '/profile/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProfileEditRoute =
+  AuthenticatedProfileEditRouteImport.update({
+    id: '/profile/edit',
+    path: '/profile/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicSchemaCheckRoute = ApiPublicSchemaCheckRouteImport.update({
+  id: '/api/public/schema-check',
+  path: '/api/public/schema-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/analysis': typeof AnalysisRoute
-  '/dashboard': typeof DashboardRoute
+  '/auth': typeof AuthRoute
   '/portal': typeof PortalRoute
-  '/report': typeof ReportRoute
-  '/roadmap': typeof RoadmapRoute
-  '/setup': typeof SetupRoute
-  '/system-check': typeof SystemCheckRoute
-  '/video-test': typeof VideoTestRoute
-  '/interview/$threadId': typeof InterviewThreadIdRoute
-  '/profile/edit': typeof ProfileEditRoute
-  '/profile/': typeof ProfileIndexRoute
+  '/analysis': typeof AuthenticatedAnalysisRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/report': typeof AuthenticatedReportRoute
+  '/roadmap': typeof AuthenticatedRoadmapRoute
+  '/setup': typeof AuthenticatedSetupRoute
+  '/system-check': typeof AuthenticatedSystemCheckRoute
+  '/video-test': typeof AuthenticatedVideoTestRoute
+  '/interview/$threadId': typeof AuthenticatedInterviewThreadIdRoute
+  '/profile/edit': typeof AuthenticatedProfileEditRoute
+  '/api/public/schema-check': typeof ApiPublicSchemaCheckRoute
+  '/profile/': typeof AuthenticatedProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/analysis': typeof AnalysisRoute
-  '/dashboard': typeof DashboardRoute
+  '/auth': typeof AuthRoute
   '/portal': typeof PortalRoute
-  '/report': typeof ReportRoute
-  '/roadmap': typeof RoadmapRoute
-  '/setup': typeof SetupRoute
-  '/system-check': typeof SystemCheckRoute
-  '/video-test': typeof VideoTestRoute
-  '/interview/$threadId': typeof InterviewThreadIdRoute
-  '/profile/edit': typeof ProfileEditRoute
-  '/profile': typeof ProfileIndexRoute
+  '/analysis': typeof AuthenticatedAnalysisRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/report': typeof AuthenticatedReportRoute
+  '/roadmap': typeof AuthenticatedRoadmapRoute
+  '/setup': typeof AuthenticatedSetupRoute
+  '/system-check': typeof AuthenticatedSystemCheckRoute
+  '/video-test': typeof AuthenticatedVideoTestRoute
+  '/interview/$threadId': typeof AuthenticatedInterviewThreadIdRoute
+  '/profile/edit': typeof AuthenticatedProfileEditRoute
+  '/api/public/schema-check': typeof ApiPublicSchemaCheckRoute
+  '/profile': typeof AuthenticatedProfileIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/analysis': typeof AnalysisRoute
-  '/dashboard': typeof DashboardRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
   '/portal': typeof PortalRoute
-  '/report': typeof ReportRoute
-  '/roadmap': typeof RoadmapRoute
-  '/setup': typeof SetupRoute
-  '/system-check': typeof SystemCheckRoute
-  '/video-test': typeof VideoTestRoute
-  '/interview/$threadId': typeof InterviewThreadIdRoute
-  '/profile/edit': typeof ProfileEditRoute
-  '/profile/': typeof ProfileIndexRoute
+  '/_authenticated/analysis': typeof AuthenticatedAnalysisRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/report': typeof AuthenticatedReportRoute
+  '/_authenticated/roadmap': typeof AuthenticatedRoadmapRoute
+  '/_authenticated/setup': typeof AuthenticatedSetupRoute
+  '/_authenticated/system-check': typeof AuthenticatedSystemCheckRoute
+  '/_authenticated/video-test': typeof AuthenticatedVideoTestRoute
+  '/_authenticated/interview/$threadId': typeof AuthenticatedInterviewThreadIdRoute
+  '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
+  '/api/public/schema-check': typeof ApiPublicSchemaCheckRoute
+  '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
+    | '/portal'
     | '/analysis'
     | '/dashboard'
-    | '/portal'
     | '/report'
     | '/roadmap'
     | '/setup'
@@ -140,13 +169,15 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
+    | '/api/public/schema-check'
     | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
+    | '/portal'
     | '/analysis'
     | '/dashboard'
-    | '/portal'
     | '/report'
     | '/roadmap'
     | '/setup'
@@ -154,36 +185,33 @@ export interface FileRouteTypes {
     | '/video-test'
     | '/interview/$threadId'
     | '/profile/edit'
+    | '/api/public/schema-check'
     | '/profile'
   id:
     | '__root__'
     | '/'
-    | '/analysis'
-    | '/dashboard'
+    | '/_authenticated'
+    | '/auth'
     | '/portal'
-    | '/report'
-    | '/roadmap'
-    | '/setup'
-    | '/system-check'
-    | '/video-test'
-    | '/interview/$threadId'
-    | '/profile/edit'
-    | '/profile/'
+    | '/_authenticated/analysis'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/report'
+    | '/_authenticated/roadmap'
+    | '/_authenticated/setup'
+    | '/_authenticated/system-check'
+    | '/_authenticated/video-test'
+    | '/_authenticated/interview/$threadId'
+    | '/_authenticated/profile/edit'
+    | '/api/public/schema-check'
+    | '/_authenticated/profile/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AnalysisRoute: typeof AnalysisRoute
-  DashboardRoute: typeof DashboardRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
   PortalRoute: typeof PortalRoute
-  ReportRoute: typeof ReportRoute
-  RoadmapRoute: typeof RoadmapRoute
-  SetupRoute: typeof SetupRoute
-  SystemCheckRoute: typeof SystemCheckRoute
-  VideoTestRoute: typeof VideoTestRoute
-  InterviewThreadIdRoute: typeof InterviewThreadIdRoute
-  ProfileEditRoute: typeof ProfileEditRoute
-  ProfileIndexRoute: typeof ProfileIndexRoute
+  ApiPublicSchemaCheckRoute: typeof ApiPublicSchemaCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -195,18 +223,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/analysis': {
-      id: '/analysis'
-      path: '/analysis'
-      fullPath: '/analysis'
-      preLoaderRoute: typeof AnalysisRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -216,78 +244,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/report': {
-      id: '/report'
+    '/_authenticated/analysis': {
+      id: '/_authenticated/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AuthenticatedAnalysisRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/report': {
+      id: '/_authenticated/report'
       path: '/report'
       fullPath: '/report'
-      preLoaderRoute: typeof ReportRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/roadmap': {
-      id: '/roadmap'
+    '/_authenticated/roadmap': {
+      id: '/_authenticated/roadmap'
       path: '/roadmap'
       fullPath: '/roadmap'
-      preLoaderRoute: typeof RoadmapRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedRoadmapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/setup': {
-      id: '/setup'
+    '/_authenticated/setup': {
+      id: '/_authenticated/setup'
       path: '/setup'
       fullPath: '/setup'
-      preLoaderRoute: typeof SetupRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSetupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/system-check': {
-      id: '/system-check'
+    '/_authenticated/system-check': {
+      id: '/_authenticated/system-check'
       path: '/system-check'
       fullPath: '/system-check'
-      preLoaderRoute: typeof SystemCheckRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSystemCheckRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/video-test': {
-      id: '/video-test'
+    '/_authenticated/video-test': {
+      id: '/_authenticated/video-test'
       path: '/video-test'
       fullPath: '/video-test'
-      preLoaderRoute: typeof VideoTestRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedVideoTestRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/interview/$threadId': {
-      id: '/interview/$threadId'
+    '/_authenticated/interview/$threadId': {
+      id: '/_authenticated/interview/$threadId'
       path: '/interview/$threadId'
       fullPath: '/interview/$threadId'
-      preLoaderRoute: typeof InterviewThreadIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedInterviewThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/profile/': {
-      id: '/profile/'
+    '/_authenticated/profile/': {
+      id: '/_authenticated/profile/'
       path: '/profile'
       fullPath: '/profile/'
-      preLoaderRoute: typeof ProfileIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedProfileIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/profile/edit': {
-      id: '/profile/edit'
+    '/_authenticated/profile/edit': {
+      id: '/_authenticated/profile/edit'
       path: '/profile/edit'
       fullPath: '/profile/edit'
-      preLoaderRoute: typeof ProfileEditRouteImport
+      preLoaderRoute: typeof AuthenticatedProfileEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/schema-check': {
+      id: '/api/public/schema-check'
+      path: '/api/public/schema-check'
+      fullPath: '/api/public/schema-check'
+      preLoaderRoute: typeof ApiPublicSchemaCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAnalysisRoute: typeof AuthenticatedAnalysisRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedReportRoute: typeof AuthenticatedReportRoute
+  AuthenticatedRoadmapRoute: typeof AuthenticatedRoadmapRoute
+  AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
+  AuthenticatedSystemCheckRoute: typeof AuthenticatedSystemCheckRoute
+  AuthenticatedVideoTestRoute: typeof AuthenticatedVideoTestRoute
+  AuthenticatedInterviewThreadIdRoute: typeof AuthenticatedInterviewThreadIdRoute
+  AuthenticatedProfileEditRoute: typeof AuthenticatedProfileEditRoute
+  AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAnalysisRoute: AuthenticatedAnalysisRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedReportRoute: AuthenticatedReportRoute,
+  AuthenticatedRoadmapRoute: AuthenticatedRoadmapRoute,
+  AuthenticatedSetupRoute: AuthenticatedSetupRoute,
+  AuthenticatedSystemCheckRoute: AuthenticatedSystemCheckRoute,
+  AuthenticatedVideoTestRoute: AuthenticatedVideoTestRoute,
+  AuthenticatedInterviewThreadIdRoute: AuthenticatedInterviewThreadIdRoute,
+  AuthenticatedProfileEditRoute: AuthenticatedProfileEditRoute,
+  AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AnalysisRoute: AnalysisRoute,
-  DashboardRoute: DashboardRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
   PortalRoute: PortalRoute,
-  ReportRoute: ReportRoute,
-  RoadmapRoute: RoadmapRoute,
-  SetupRoute: SetupRoute,
-  SystemCheckRoute: SystemCheckRoute,
-  VideoTestRoute: VideoTestRoute,
-  InterviewThreadIdRoute: InterviewThreadIdRoute,
-  ProfileEditRoute: ProfileEditRoute,
-  ProfileIndexRoute: ProfileIndexRoute,
+  ApiPublicSchemaCheckRoute: ApiPublicSchemaCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
