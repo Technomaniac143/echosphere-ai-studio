@@ -609,7 +609,6 @@ export function ReportPage() {
   const displayCompetencies = compScores.length
     ? compScores.map((c:any,i:number)=>({name:c.skill||c.name,score:Math.round(c.score),justification:c.justification}))
     : [];
-  const fallbackCompetencies = competencies.map(([name,score])=>({name,score,justification:""}));
 
   const hasData = interview || latest;
   const hasScores = hasData && (score > 0 || compScores.length > 0);
