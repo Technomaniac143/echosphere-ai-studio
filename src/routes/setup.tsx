@@ -1,3 +1,0 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { SetupPage } from "@/components/echosphere";
-export const Route = createFileRoute("/setup")({ head:()=>({meta:[{title:"Configure Interview — EchoSphere"},{name:"description",content:"Configure a five-step adaptive mock interview."},{property:"og:title",content:"Configure Interview — EchoSphere"},{property:"og:description",content:"Configure a five-step adaptive mock interview."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: SetupPage });

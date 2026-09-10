@@ -1,10 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getProfile, upsertProfile, uploadPhoto } from "./profile.functions";
+import { listInterviews } from "./interview.functions";
 
-/**
- * Local candidate state (photo + interview history).
- * NOTE (future): this will be backed by a real database with recorded
- * interview data; for now everything lives in the browser.
- */
 export type CompetencyScore = { name: string; score: number };
 
 export type InterviewRecord = {
@@ -52,34 +50,60 @@ export type CandidateState = {
   history: InterviewRecord[];
 };
 
-const STORAGE_KEY = "echosphere.candidate.v1";
-
 export const defaultCompetencies: CompetencyScore[] = [
-  { name: "Communication", score: 86 },
-  { name: "Technical Depth", score: 84 },
-  { name: "Problem Solving", score: 78 },
-  { name: "Product Thinking", score: 61 },
-  { name: "Leadership", score: 75 },
-  { name: "Adaptability", score: 79 },
+  { name: "Communication", score: 0 },
+  { name: "Technical Depth", score: 0 },
+  { name: "Problem Solving", score: 0 },
+  { name: "Product Thinking", score: 0 },
+  { name: "Leadership", score: 0 },
+  { name: "Adaptability", score: 0 },
 ];
 
-const defaultState: CandidateState = {
-  name: "Arjun Sharma",
-  email: "arjun.sharma@example.com",
+const emptyState: CandidateState = {
+  name: "",
+  email: "",
   photo: null,
   profile: emptyProfile,
-  history: [
-    { id: "r1", company: "Amazon", role: "Backend Engineer", domain: "Backend Systems", date: "May 18, 2025", cumulative: 82, competencies: defaultCompetencies },
-    { id: "r2", company: "Microsoft", role: "Staff Software Engineer", domain: "Distributed Systems", date: "Apr 02, 2025", cumulative: 76, competencies: [
-      { name: "Communication", score: 80 }, { name: "Technical Depth", score: 79 }, { name: "Problem Solving", score: 74 },
-      { name: "Product Thinking", score: 58 }, { name: "Leadership", score: 72 }, { name: "Adaptability", score: 73 },
-    ] },
-    { id: "r3", company: "Google", role: "Senior Software Engineer", domain: "Data Engineering", date: "Feb 21, 2025", cumulative: 71, competencies: [
-      { name: "Communication", score: 74 }, { name: "Technical Depth", score: 72 }, { name: "Problem Solving", score: 70 },
-      { name: "Product Thinking", score: 55 }, { name: "Leadership", score: 68 }, { name: "Adaptability", score: 70 },
-    ] },
-  ],
+  history: [],
 };
+
+function dbToState(db: any): CandidateState {
+  const certs = Array.isArray(db.certifications) && db.certifications.length > 0 ? db.certifications[0] : {};
+  return {
+    name: db.full_name || "",
+    email: db.email || "",
+    photo: null,
+    profile: {
+      resumeName: db.resume_path ? db.resume_path.split("/").pop() : "",
+      github: db.github_url || "",
+      institution: db.institution || "",
+      degree: db.degree || "",
+      department: db.department || "",
+      graduationYear: db.graduation_year ? String(db.graduation_year) : "",
+      certificationName: certs.name || "",
+      certificationOrg: certs.org || "",
+      certificationYear: certs.year || "",
+      certificationUrl: certs.url || "",
+    },
+    history: [],
+  };
+}
+
+function stateToDb(state: CandidateState): any {
+  return {
+    full_name: state.name,
+    email: state.email,
+    github_url: state.profile.github,
+    institution: state.profile.institution,
+    degree: state.profile.degree,
+    department: state.profile.department,
+    graduation_year: state.profile.graduationYear ? Number(state.profile.graduationYear) : null,
+    certifications: state.profile.certificationName
+      ? [{ name: state.profile.certificationName, org: state.profile.certificationOrg, year: state.profile.certificationYear, url: state.profile.certificationUrl }]
+      : [],
+    photo_path: state.photo ? "pending" : null,
+  };
+}
 
 type Ctx = {
   candidate: CandidateState;
@@ -88,38 +112,62 @@ type Ctx = {
   profileComplete: boolean;
   cumulative: number;
   previousCumulative: number | null;
+  loading: boolean;
 };
 
 const CandidateContext = createContext<Ctx | null>(null);
 
 export function CandidateProvider({ children }: { children: ReactNode }) {
-  const [candidate, setCandidate] = useState<CandidateState>(defaultState);
+  const [candidate, setCandidate] = useState<CandidateState>(emptyState);
+  const [loading, setLoading] = useState(true);
+  const fetchProfile = useServerFn(getProfile);
+  const saveProfile = useServerFn(upsertProfile);
+  const savePhoto = useServerFn(uploadPhoto);
+  const fetchInterviews = useServerFn(listInterviews);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<CandidateState>;
-        setCandidate(c => ({ ...c, ...parsed, profile: { ...c.profile, ...(parsed.profile ?? {}) }, history: parsed.history?.length ? parsed.history : c.history }));
+    let cancelled = false;
+    (async () => {
+      try {
+        const [profile, interviews] = await Promise.all([fetchProfile({ data: undefined }), fetchInterviews({ data: undefined })]);
+        if (cancelled) return;
+        const base = profile ? dbToState(profile) : emptyState;
+        setCandidate({ ...base, history: interviews ?? [] });
+      } catch (e) {
+        console.error("Failed to load candidate data", e);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch { /* ignore malformed storage */ }
-  }, []);
+    })();
+    return () => { cancelled = true; };
+  }, [fetchProfile, fetchInterviews]);
 
-  const setPhoto = useCallback((photo: string | null) => {
-    setCandidate(c => {
-      const next = { ...c, photo, history: c.history.map(h => ({ ...h, photo: photo ?? undefined })) };
-      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* quota */ }
-      return next;
-    });
-  }, []);
+  const setPhoto = useCallback(async (photo: string | null) => {
+    setCandidate(c => ({ ...c, photo }));
+    if (!photo) return;
+    try {
+      const result = await savePhoto({ data: { base64: photo, contentType: "image/jpeg" } });
+      if (result?.url) {
+        setCandidate(c => ({ ...c, photo: result.url }));
+      }
+    } catch (e) {
+      console.error("Failed to upload photo", e);
+    }
+  }, [savePhoto]);
 
-  const setProfile = useCallback((profile: CandidateProfile) => {
+  const setProfile = useCallback(async (profile: CandidateProfile) => {
     setCandidate(c => {
       const next = { ...c, profile };
-      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* quota */ }
+      (async () => {
+        try {
+          await saveProfile({ data: stateToDb(next) });
+        } catch (e) {
+          console.error("Failed to save profile", e);
+        }
+      })();
       return next;
     });
-  }, []);
+  }, [saveProfile]);
 
   const value = useMemo<Ctx>(() => {
     const latest = candidate.history[0];
@@ -130,8 +178,9 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
       profileComplete: isProfileComplete(candidate.profile),
       cumulative: latest?.cumulative ?? 0,
       previousCumulative: candidate.history[1]?.cumulative ?? null,
+      loading,
     };
-  }, [candidate, setPhoto, setProfile]);
+  }, [candidate, setPhoto, setProfile, loading]);
 
   return <CandidateContext.Provider value={value}>{children}</CandidateContext.Provider>;
 }
