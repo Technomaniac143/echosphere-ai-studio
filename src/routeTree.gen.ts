@@ -78,9 +78,9 @@ const ProfileIndexRoute = ProfileIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileEditRoute = ProfileEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile/edit',
+  path: '/profile/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -182,6 +182,7 @@ export interface RootRouteChildren {
   SystemCheckRoute: typeof SystemCheckRoute
   VideoTestRoute: typeof VideoTestRoute
   InterviewThreadIdRoute: typeof InterviewThreadIdRoute
+  ProfileEditRoute: typeof ProfileEditRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
@@ -266,10 +267,10 @@ declare module '@tanstack/react-router' {
     }
     '/profile/edit': {
       id: '/profile/edit'
-      path: '/edit'
+      path: '/profile/edit'
       fullPath: '/profile/edit'
       preLoaderRoute: typeof ProfileEditRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -285,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   SystemCheckRoute: SystemCheckRoute,
   VideoTestRoute: VideoTestRoute,
   InterviewThreadIdRoute: InterviewThreadIdRoute,
+  ProfileEditRoute: ProfileEditRoute,
   ProfileIndexRoute: ProfileIndexRoute,
 }
 export const routeTree = rootRouteImport
