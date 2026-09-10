@@ -113,6 +113,7 @@ function stateToDb(state: CandidateState): any {
       ? [{ name: state.profile.certificationName, org: state.profile.certificationOrg, year: state.profile.certificationYear, url: state.profile.certificationUrl }]
       : [],
     photo_path: state.photo ? "pending" : null,
+    resume_path: state.profile.resumeName || null,
   };
 }
 
