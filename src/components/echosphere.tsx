@@ -122,11 +122,6 @@ export function PortalPage() {
 }
 
 const competencies = [["Technical",84],["Problem Solving",78],["Communication",86],["Product Thinking",61],["Leadership",75],["Behavioral",82],["Adaptability",79]] as const;
-const sessions = [
-  {state:"IN PROGRESS",company:"Google",role:"Senior Software Engineer",date:"Today",score:"—",action:"Resume"},
-  {state:"COMPLETED",company:"Amazon",role:"Backend Engineer",date:"May 18, 2025",score:"82",action:"View Report"},
-  {state:"SCHEDULED",company:"Microsoft",role:"Staff Software Engineer",date:"May 28, 2025",score:"—",action:"Details"},
-];
 export function DashboardPage() {
   const { candidate, cumulative, previousCumulative } = useCandidate();
   const delta = previousCumulative === null ? null : cumulative - previousCumulative;
