@@ -16,7 +16,8 @@ export const getAgoraSession = createServerFn({ method: "POST" })
     const cert = process.env['AGORA_APP_CERTIFICATE'];
     if (!appId || !cert) throw new Error("Agora is not configured");
 
-    const { RtcTokenBuilder, RtcRole } = await import("agora-token");
+    const agoraModule: any = await import("agora-token");
+    const { RtcTokenBuilder, RtcRole } = agoraModule.default ?? agoraModule;
     // Channel name limited to 64 chars; thread id is a uuid.
     const channel = `es-${data.threadId}`.slice(0, 64);
     // Deterministic numeric uid derived from the user id.
