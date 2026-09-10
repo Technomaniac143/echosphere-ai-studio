@@ -49,9 +49,10 @@ export function LiveInterviewer({
     } catch { /* noop */ }
   }, []);
 
-  useEffect(() => () => { void stop(); }, [stop]);
+  useEffect(() => { console.log("[live] mounted"); return () => { console.log("[live] unmounted"); void stop(); }; }, [stop]);
 
   async function connect() {
+    console.log("[live] connect start");
     setStatus("connecting");
     setError(null);
     try {
@@ -81,6 +82,7 @@ export function LiveInterviewer({
       }
 
       // --- Anam: digital human interviewer ---
+      console.log("[live] agora phase done");
       const { sessionToken } = await startAnam({
         data: { company, role, domain, candidateName },
       });
@@ -99,6 +101,7 @@ export function LiveInterviewer({
       });
       anam.addListener("CONNECTION_CLOSED" as any, () => setStatus("idle"));
 
+      console.log("[live] anam token ok, streaming");
       await anam.streamToVideoElement(videoId, micStream);
       setStatus("live");
     } catch (e: any) {
