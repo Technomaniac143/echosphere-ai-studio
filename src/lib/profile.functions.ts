@@ -17,6 +17,7 @@ const ProfileSchema = z.object({
     url: z.string().max(500),
   })).nullable().optional(),
   photo_path: z.string().max(500).nullable().optional(),
+  resume_path: z.string().max(500).nullable().optional(),
 });
 
 export const getProfile = createServerFn({ method: "GET" })
