@@ -25,6 +25,7 @@ import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
 import { AgentPanel, agents, useAgentRotation } from "@/components/echosphere/agent-panel";
 import { LiveInterviewer, type LiveMessage } from "@/components/echosphere/live-interviewer";
 import { useProctoring } from "@/components/echosphere/use-proctoring";
+import { CameraRecorder } from "@/components/echosphere/camera-recorder";
 
 const CodeEditorPanel = lazy(() => import("@/components/echosphere/code-editor"));
 const WhiteboardPanel = lazy(() => import("@/components/echosphere/whiteboard"));
