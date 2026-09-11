@@ -91,8 +91,8 @@ Rules:
       result = await mint({
         personaConfig: {
           name: "Alex",
-          avatarId: "6cc28442-cccd-42a8-b6e4-24b7210a09c5", // Gabriel, seated at a table
-          voiceId: "90c1fb05-4fc0-11f1-84b0-52bacf74fa75", // Cooper
+          avatarId: "071b0286-4cce-4808-bee2-e642f1062de3", // Liv, seated at home
+          voiceId: "90a1acd3-4fc0-11f1-84b0-52bacf74fa75", // Rachel - Polished Presence
           llmId: "27cbd128-f1e6-4b67-8ab3-9123659be08c", // Gemini 3 Flash Preview
           systemPrompt,
         },
