@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Loader2, PhoneCall } from "lucide-react";
-import { getAgoraSession, getAnamSession } from "@/lib/realtime.functions";
+import { getAnamSession } from "@/lib/realtime.functions";
 
 export type LiveMessage = { from: "assistant" | "user"; text: string };
 
