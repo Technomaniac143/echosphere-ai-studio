@@ -55,30 +55,19 @@ export function LiveInterviewer({
     setStatus("connecting");
     setError(null);
     try {
-      const [{ default: AgoraRTC }, anamSdk] = await Promise.all([
-        import("agora-rtc-sdk-ng"),
-        import("@anam-ai/js-sdk"),
-      ]);
-      AgoraRTC.setLogLevel(3);
+      const anamSdk = await import("@anam-ai/js-sdk");
 
-      // --- Agora: candidate microphone channel with noise suppression ---
-      let micStream: MediaStream | undefined;
+      // --- Candidate microphone: capture directly so Anam always gets audio ---
+      let micStream: MediaStream;
       try {
-        const cred = await startAgora({ data: { threadId } });
-        const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
-        await client.join(cred.appId, cred.channel, cred.token, cred.uid);
-        const track = await AgoraRTC.createMicrophoneAudioTrack({
-          AEC: true, ANS: true, AGC: true,
-          encoderConfig: "speech_standard",
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         });
-        await client.publish(track);
-        agoraRef.current = { client, track };
-        const mediaTrack = track.getMediaStreamTrack();
-        micStream = new MediaStream([mediaTrack]);
-      } catch (e) {
-        console.error("Agora channel unavailable, falling back to direct mic", e);
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        throw new Error("Microphone access was blocked. Allow it in your browser and try again.");
       }
+      micStreamRef.current = micStream;
+      micStream.getAudioTracks().forEach((t) => { t.enabled = !(muted || paused); });
 
       // --- Anam: digital human interviewer ---
       const { sessionToken } = await startAnam({
@@ -106,6 +95,7 @@ export function LiveInterviewer({
       });
 
       await anam.streamToVideoElement(videoId, micStream);
+      try { anam.unmuteInputAudio?.(); } catch { /* noop */ }
       setStatus("live");
     } catch (e: any) {
       console.error(e);
@@ -119,7 +109,7 @@ export function LiveInterviewer({
   useEffect(() => {
     const silence = muted || paused;
     try {
-      agoraRef.current?.track?.setEnabled?.(!silence);
+      micStreamRef.current?.getAudioTracks().forEach((t) => { t.enabled = !silence; });
       if (silence) anamRef.current?.muteInputAudio?.();
       else anamRef.current?.unmuteInputAudio?.();
     } catch { /* noop */ }
