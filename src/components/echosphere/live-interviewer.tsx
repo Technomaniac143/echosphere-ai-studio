@@ -32,21 +32,15 @@ export function LiveInterviewer({
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const anamRef = useRef<any>(null);
-  const agoraRef = useRef<{ client: any; track: any } | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
   const startAnam = useServerFn(getAnamSession);
-  const startAgora = useServerFn(getAgoraSession);
   const videoId = `anam-video-${threadId}`;
 
   const stop = useCallback(async () => {
     try { await anamRef.current?.stopStreaming?.(); } catch { /* noop */ }
     anamRef.current = null;
-    const agora = agoraRef.current;
-    agoraRef.current = null;
-    try {
-      agora?.track?.stop?.();
-      agora?.track?.close?.();
-      await agora?.client?.leave?.();
-    } catch { /* noop */ }
+    micStreamRef.current?.getTracks().forEach((t) => t.stop());
+    micStreamRef.current = null;
   }, []);
 
   useEffect(() => () => { void stop(); }, [stop]);
