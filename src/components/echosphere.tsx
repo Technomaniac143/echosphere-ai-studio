@@ -281,51 +281,149 @@ export function ProfilePage() {
   </div><EchoAssistant/></main>;
 }
 
+const profileValidators: Partial<Record<keyof CandidateProfile, Validator>> = {
+  fullName: required("Full name"),
+  email: validEmail,
+  phone: validPhone,
+  resumeName: required("A resume"),
+  github: validGithubRepo,
+  linkedin: validLinkedin,
+  bestProject: validUrlOptional,
+  institution: required("Institution"),
+  degree: required("Degree"),
+  department: required("Department"),
+  graduationYear: validGraduationYear,
+  certificationUrl: validUrlOptional,
+};
+
 export function EditProfilePage() {
   const navigate=useNavigate();
   const { candidate, setProfile }=useCandidate();
   const [form,setForm]=useState<CandidateProfile>(candidate.profile);
-  const [saved,setSaved]=useState(false);
+  const [errors,setErrors]=useState<Partial<Record<keyof CandidateProfile,string>>>({});
   const [touched,setTouched]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const [saveError,setSaveError]=useState("");
+  const [saved,setSaved]=useState(false);
+  const [analysis,setAnalysis]=useState<any>(null);
+  const [analysing,setAnalysing]=useState(false);
+  const [analysisError,setAnalysisError]=useState("");
+  const analyse=useServerFn(analyzeGithubProject);
+
   useEffect(()=>{setForm(candidate.profile)},[candidate.profile]);
-  const set=(k:keyof CandidateProfile)=>(v:string)=>{setForm(f=>({...f,[k]:v.slice(0,300)}));setSaved(false)};
-  const missing=requiredProfileFields.filter(f=>!form[f].trim());
-  const complete=missing.length===0;
-  const filled=Object.values(form).filter(v=>v.trim()).length;
-  const percent=Math.round((filled/Object.keys(form).length)*100);
-  function submit(e:React.FormEvent){
-    e.preventDefault(); setTouched(true);
-    if(!complete) return;
-    setProfile({...form,github:form.github.trim()}); setSaved(true);
-    window.setTimeout(()=>navigate({to:"/profile"}),450);
+
+  function validate(next:CandidateProfile){
+    const found:Partial<Record<keyof CandidateProfile,string>>={};
+    (Object.keys(profileValidators) as (keyof CandidateProfile)[]).forEach(k=>{
+      const message=profileValidators[k]!(next[k] ?? "");
+      if(message) found[k]=message;
+    });
+    return found;
   }
-  const err=(k:keyof CandidateProfile)=>touched&&requiredProfileFields.includes(k)&&!form[k].trim();
-  const field=(k:keyof CandidateProfile,label:string,placeholder="")=><label key={k} className="text-xs font-semibold">{label}{requiredProfileFields.includes(k)&&<span className="text-brand"> *</span>}
-    <input value={form[k]} placeholder={placeholder} onChange={e=>set(k)(e.target.value)} className={cn("mt-2 h-11 w-full border px-3 outline-none focus:border-brand",err(k)?"border-destructive":"border-foreground/20")}/>
-    {err(k)&&<span className="mt-1 block font-normal text-[11px] text-destructive">This field is required.</span>}
-  </label>;
+
+  const set=(k:keyof CandidateProfile)=>(v:string)=>{
+    setSaved(false); setSaveError("");
+    setForm(f=>{
+      const next={...f,[k]:v.slice(0,2000)};
+      if(touched) setErrors(validate(next));
+      return next;
+    });
+  };
+
+  async function submit(e:React.FormEvent){
+    e.preventDefault(); setTouched(true); setSaveError("");
+    const found=validate(form);
+    setErrors(found);
+    if(Object.keys(found).length){
+      document.querySelector<HTMLElement>("[data-invalid='true']")?.scrollIntoView({behavior:"smooth",block:"center"});
+      return;
+    }
+    setSaving(true);
+    const result=await setProfile(form);
+    setSaving(false);
+    if(!result.ok){ setSaveError(result.error ?? "Your profile could not be saved."); return; }
+    setSaved(true);
+    window.setTimeout(()=>navigate({to:"/profile"}),500);
+  }
+
+  async function runAnalysis(){
+    setAnalysisError(""); setAnalysis(null);
+    const bad=validGithubRepo(form.github);
+    if(bad){ setErrors(e=>({...e,github:bad})); setTouched(true); return; }
+    setAnalysing(true);
+    try{ setAnalysis(await analyse({data:{url:form.github.trim()}})); }
+    catch(err:any){ setAnalysisError(err?.message ?? "That repository could not be analysed."); }
+    finally{ setAnalysing(false); }
+  }
+
+  const filled=Object.values(form).filter(v=>(v??"").trim()).length;
+  const percent=Math.round((filled/Object.keys(form).length)*100);
+
+  const field=(k:keyof CandidateProfile,label:string,placeholder="",type="text")=>{
+    const message=touched?errors[k]:undefined;
+    return <label key={k} data-invalid={message?"true":"false"} className="block text-xs font-semibold">{label}{requiredProfileFields.includes(k)&&<span className="text-brand"> *</span>}
+      <input value={form[k] ?? ""} type={type} placeholder={placeholder} onChange={e=>set(k)(e.target.value)} aria-invalid={!!message}
+        className={cn("mt-2 h-11 w-full border px-3 outline-none focus:border-brand",message?"border-destructive":"border-foreground/20")}/>
+      {message&&<span className="mt-1 block text-[11px] font-normal text-destructive">{message}</span>}
+    </label>;
+  };
+
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-6xl px-5 py-12">
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-      <div><Eyebrow>Context builder</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Edit Profile</h1><p className="mt-3 max-w-2xl text-muted-foreground">Resume, project repository, education and certifications personalize your AI mock interviewer. Required fields must be filled before you can start an interview.</p></div>
+      <div><Eyebrow>Context builder</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">Edit Profile</h1><p className="mt-3 max-w-2xl text-muted-foreground">Your contact details, resume, project repository, education and certifications personalize your AI mock interviewer. Required fields must be filled before you can start an interview.</p></div>
       <div className="w-56"><p className="flex justify-between font-mono text-[10px] uppercase"><span>Context complete</span><b>{percent}%</b></p><div className="mt-2 h-2 bg-white"><div className="h-full bg-brand" style={{width:`${percent}%`}}/></div></div>
     </div>
-    <form onSubmit={submit} className="mt-10 grid gap-6 lg:grid-cols-[1fr_1fr]">
-      <FormSection number="A" title="Candidate resume" icon={<FileText/>}>
-        <label className={cn("grid min-h-40 cursor-pointer place-items-center border border-dashed bg-muted/50 text-center hover:border-brand",err("resumeName")?"border-destructive":"border-foreground/30")}>
-          <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e=>set("resumeName")(e.target.files?.[0]?.name||"")}/>
+    <form onSubmit={submit} noValidate className="mt-10 grid gap-6 lg:grid-cols-[1fr_1fr]">
+      <FormSection number="A" title="Personal details" icon={<UserRound/>}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {field("fullName","Full name","Jane Doe")}
+          {field("email","Email address","you@gmail.com","email")}
+          {field("phone","Phone number","10 digits")}
+          {field("linkedin","LinkedIn (optional)","https://linkedin.com/in/username")}
+        </div>
+      </FormSection>
+      <FormSection number="B" title="Candidate resume" icon={<FileText/>}>
+        <label data-invalid={touched&&errors.resumeName?"true":"false"} className={cn("grid min-h-40 cursor-pointer place-items-center border border-dashed bg-muted/50 text-center hover:border-brand",touched&&errors.resumeName?"border-destructive":"border-foreground/30")}>
+          <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e=>{
+            const file=e.target.files?.[0];
+            if(!file){ set("resumeName")(""); return; }
+            const problem=validateResumeFile(file);
+            if(problem){ setTouched(true); setErrors(x=>({...x,resumeName:problem})); set("resumeName")(""); return; }
+            setErrors(x=>({...x,resumeName:undefined as any}));
+            set("resumeName")(file.name);
+          }}/>
           <div><Upload className="mx-auto mb-3 text-brand"/><b>{form.resumeName||"Drop your resume or browse"}</b><p className="mt-1 text-xs text-muted-foreground">PDF, DOC, DOCX · Maximum 10MB</p></div>
         </label>
-        {err("resumeName")&&<p className="mt-2 text-[11px] text-destructive">A resume is required.</p>}
+        {touched&&errors.resumeName&&<p className="mt-2 text-[11px] text-destructive">{errors.resumeName}</p>}
       </FormSection>
-      <FormSection number="B" title="Best project GitHub link" icon={<Github/>}>
+      <FormSection number="C" title="Best project GitHub link" icon={<Github/>}>
         {field("github","Repository URL","https://github.com/username/project")}
-        <p className="mt-3 text-xs leading-5 text-muted-foreground">The interviewer will evaluate code structure and architecture from this project.</p>
+        {field("bestProject","Live project link (optional)","https://myproject.app")}
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button type="button" onClick={runAnalysis} disabled={analysing} variant="outline" className={outlineButton}>{analysing?<><Loader2 className="animate-spin"/> Analysing…</>:<><WandSparkles/> Analyse this repository</>}</Button>
+          <p className="text-xs text-muted-foreground">The interviewer will ask questions about this project.</p>
+        </div>
+        {analysisError&&<p className="mt-3 text-xs text-destructive">{analysisError}</p>}
+        {analysis&&<div className="mt-4 border border-foreground/15 bg-muted/40 p-4 text-xs leading-5">
+          <p className="font-semibold">{analysis.repo}</p>
+          <p className="mt-2 text-muted-foreground">{analysis.summary}</p>
+          {analysis.technologies?.length>0&&<div className="mt-3 flex flex-wrap gap-1.5">{analysis.technologies.map((t:string)=><span key={t} className="border border-foreground/15 bg-white px-2 py-1">{t}</span>)}</div>}
+          {analysis.questions?.length>0&&<ul className="mt-3 list-disc space-y-1 pl-4 text-muted-foreground">{analysis.questions.slice(0,3).map((q:string)=><li key={q}>{q}</li>)}</ul>}
+        </div>}
       </FormSection>
-      <FormSection number="C" title="Educational details" icon={<GraduationCap/>}><div className="grid gap-4 sm:grid-cols-2">{field("institution","Institution / College / University")}{field("degree","Degree")}{field("department","Department / Branch")}{field("graduationYear","Graduation Year")}</div></FormSection>
-      <FormSection number="D" title="Certifications" icon={<Award/>}><div className="grid gap-3 sm:grid-cols-2">{field("certificationName","Certification Name")}{field("certificationOrg","Issuing Organization")}{field("certificationYear","Year / Issue Date")}{field("certificationUrl","Credential URL")}</div></FormSection>
+      <FormSection number="D" title="Experience" icon={<BriefcaseBusiness/>}>
+        <label className="block text-xs font-semibold">Work or project experience
+          <textarea value={form.experience} onChange={e=>set("experience")(e.target.value)} rows={6} placeholder="Internships, jobs, notable projects…" className="mt-2 w-full resize-none border border-foreground/20 p-3 text-sm outline-none focus:border-brand"/>
+        </label>
+      </FormSection>
+      <FormSection number="E" title="Educational details" icon={<GraduationCap/>}><div className="grid gap-4 sm:grid-cols-2">{field("institution","Institution / College / University")}{field("degree","Degree")}{field("department","Department / Branch")}{field("graduationYear","Graduation Year","2025")}</div></FormSection>
+      <FormSection number="F" title="Certifications" icon={<Award/>}><div className="grid gap-3 sm:grid-cols-2">{field("certificationName","Certification Name")}{field("certificationOrg","Issuing Organization")}{field("certificationYear","Year / Issue Date")}{field("certificationUrl","Credential URL","https://…")}</div></FormSection>
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-foreground/15 pt-6 lg:col-span-2">
-        <p className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles className="size-4 text-brand"/> {saved?"Profile saved.":touched&&!complete?`${missing.length} required field(s) still missing.`:"EchoSphere is building your interview context…"}</p>
-        <div className="flex gap-2"><Button type="button" variant="outline" className={outlineButton} onClick={()=>navigate({to:"/profile"})}>Cancel</Button><Button className={violetButton}>Save Profile <ArrowRight/></Button></div>
+        <p className={cn("flex items-center gap-2 text-xs",saveError?"text-destructive":"text-muted-foreground")}>
+          <Sparkles className="size-4 text-brand"/>
+          {saveError||(saved?"Profile saved.":touched&&Object.keys(errors).length?`${Object.keys(errors).length} field(s) need attention.`:"EchoSphere is building your interview context…")}
+        </p>
+        <div className="flex gap-2"><Button type="button" variant="outline" className={outlineButton} onClick={()=>navigate({to:"/profile"})}>Cancel</Button><Button disabled={saving} className={violetButton}>{saving?"Saving…":"Save Profile"} <ArrowRight/></Button></div>
       </div>
     </form>
   </div><EchoAssistant/></main>;
