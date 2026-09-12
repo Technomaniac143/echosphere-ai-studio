@@ -11,17 +11,21 @@ export const createOrganization = createServerFn({ method: "POST" })
     website: z.string().max(300).optional().default("").refine(v => !v.trim() || URL_RE.test(v.trim()), "Enter a valid website URL."),
   }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: existing } = await context.supabase
+    // Caller is verified by requireSupabaseAuth; ownership comes from context.userId.
+    // Use the privileged client so RLS can't block the atomic org + membership create.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: existing } = await supabaseAdmin
       .from("organization_members").select("organization_id").eq("user_id", context.userId).maybeSingle();
     if (existing) return { organizationId: (existing as any).organization_id, created: false };
 
-    const { data: org, error } = await context.supabase
+    const { data: org, error } = await supabaseAdmin
       .from("organizations")
       .insert({ name: data.name.trim(), email: data.email.trim(), website: data.website.trim() || null } as any)
       .select().single();
     if (error) throw error;
 
-    const { error: memberError } = await context.supabase
+    const { error: memberError } = await supabaseAdmin
       .from("organization_members")
       .insert({ organization_id: (org as any).id, user_id: context.userId, role: "owner" } as any);
     if (memberError) throw memberError;
