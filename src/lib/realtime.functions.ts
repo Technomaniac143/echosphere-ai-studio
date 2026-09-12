@@ -100,6 +100,11 @@ Rules:
     }
 
     if (!result.ok) {
+      if (result.status === 401 || result.status === 403) {
+        throw new Error(
+          "The digital interviewer service rejected the saved API key. Please generate a new key and save it again.",
+        );
+      }
       throw new Error(`Anam session failed: ${result.status} ${result.text.slice(0, 300)}`);
     }
 
