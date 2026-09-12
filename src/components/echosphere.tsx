@@ -83,7 +83,7 @@ export function LandingPage() {
         <div className="absolute left-[3vw] top-14 h-28 w-px bg-foreground/10" /><Eyebrow>Adaptive intelligence, in conversation</Eyebrow>
         <h1 className="max-w-3xl text-[clamp(3.2rem,7vw,7.6rem)] font-semibold leading-[.87] tracking-[-.07em]">Every answer<br /><span className="text-brand">shapes the</span><br />next question.</h1>
         <p className="mt-8 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">Voice-first interviews led by a coordinated AI panel. Adaptive questioning, real-time context, and evidence-backed feedback—built around how you think.</p>
-        <div className="mt-9 flex flex-wrap gap-4"><Link to="/portal"><Button size="lg" className={violetButton}>Are you a Candidate? <ArrowRight /></Button></Link><Button size="lg" variant="outline" className={outlineButton}>Are you an Organization? <ArrowUpRight /></Button></div>
+        <div className="mt-9 flex flex-wrap gap-4"><Link to="/portal"><Button size="lg" className={violetButton}>Are you a Candidate? <ArrowRight /></Button></Link><Link to="/organization"><Button size="lg" variant="outline" className={outlineButton}>Are you an Organization? <ArrowUpRight /></Button></Link></div>
         <div className="mt-12 flex items-center gap-5 border-t border-foreground/15 pt-5 text-xs text-muted-foreground"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-brand" /> Encrypted voice & identity</span><span className="flex items-center gap-2"><Zap className="size-4 text-brand" /> Adaptive in real time</span></div>
       </div>
       <div className="relative min-h-[560px] overflow-hidden bg-brand p-6 text-white md:p-10">
