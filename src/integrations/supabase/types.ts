@@ -403,11 +403,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_any_org_member: { Args: { _user_id: string }; Returns: boolean }
-      is_org_member: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
