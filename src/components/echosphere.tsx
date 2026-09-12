@@ -865,53 +865,131 @@ export function InterviewPage() {
 }
 function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}[]}) { return <div className="space-y-5 py-2">{messages.map((m,i)=><Message from={m.from} key={i}><p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{m.from==="assistant"?"Alex · AI Interviewer":"You"}</p><MessageContent className={cn("text-sm leading-6",m.from==="user"?"rounded-xl bg-brand px-3 py-2 text-white":"text-foreground/80")}><MessageResponse>{m.text}</MessageResponse></MessageContent></Message>)}</div> }
 
+const CATEGORY_KEYS = ["technical","behavioral","product_manager","hiring_manager"] as const;
+type CategoryKey = typeof CATEGORY_KEYS[number];
+
 export function ReportPage() {
   const navigate=useNavigate();
   const { threadId } = useSearch({ from: "/_authenticated/report" });
   const getThread = useServerFn(getInterview);
   const [interview,setInterview]=useState<Record<string,any>|null>(null);
-  const iv = interview as any;
-  const { candidate, cumulative, previousCumulative } = useCandidate();
+  const [loading,setLoading]=useState(true);
+  const [exporting,setExporting]=useState(false);
+  const { candidate } = useCandidate();
   const latest = candidate.history[0] as any;
   const targetId = threadId || latest?.id;
 
   useEffect(() => {
-    if (!targetId) return;
-    getThread({ data: { threadId: targetId } }).then(t => setInterview(t)).catch(console.error);
+    if (!targetId) { setLoading(false); return; }
+    setLoading(true);
+    getThread({ data: { threadId: targetId } })
+      .then(t => setInterview(t as any))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [targetId, getThread]);
 
-  const score = iv?.['overall_score'] ?? latest?.overall_score ?? cumulative ?? 0;
-  const compScores = (iv?.['competency_scores'] as any[]) ?? (latest?.competency_scores as any[]) ?? [];
-  const strengths = iv?.['strengths'] ?? latest?.strengths ?? [];
-  const improvements = iv?.['improvements'] ?? latest?.improvements ?? [];
-  const rawPanelScores = (iv?.['panel_scores'] as any[]) ?? (latest?.panel_scores as any[]) ?? [];
-  const panelScores = rawPanelScores.length
-    ? rawPanelScores.map((p: any) => [p.name ?? "Interviewer", p.role ?? "Panel", Math.round(p.score ?? 0)])
-    : [];
-  const recommendation = iv?.['recommendation'] ?? latest?.recommendation ?? "";
-  const displayCompetencies = compScores.length
-    ? compScores.map((c:any,i:number)=>({name:c.skill||c.name,score:Math.round(c.score),justification:c.justification}))
-    : [];
+  const iv = interview as any;
+  const terminated = iv?.status === "terminated";
+  const overall = Math.round(iv?.overall_score ?? 0);
+  const recommendation: string = iv?.recommendation ?? "";
+  const strengths: string[] = iv?.strengths ?? [];
+  const improvements: string[] = iv?.improvements ?? [];
+  const evidence = (iv?.score_evidence ?? {}) as Record<string,string[]>;
+  const lostPoints = (iv?.lost_points ?? {}) as Record<string,string[]>;
+  const categories = CATEGORY_KEYS.map(key => ({
+    key,
+    label: (CATEGORY_LABELS as Record<string,string>)[key] ?? key,
+    score: iv?.[`${key}_score`] === null || iv?.[`${key}_score`] === undefined ? null : Math.round(iv[`${key}_score`]),
+    evidence: evidence[key] ?? [],
+    lost: lostPoints[key] ?? [],
+  }));
+  const scored = categories.some(c => c.score !== null);
 
-  const hasData = interview || latest;
-  const hasScores = hasData && (score > 0 || compScores.length > 0);
-  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12"><div className="flex flex-col justify-between gap-7 md:flex-row md:items-end"><div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1><p className="mt-4 text-muted-foreground">{candidate.name} &middot; {iv?.['role']||latest?.role||"Interview"} &middot; {iv?.['company']||latest?.company||""} {iv?.['created_at'] ? new Date(iv?.['created_at']).toLocaleDateString() : ""}</p></div><div className="flex gap-2"><Button variant="outline" className={outlineButton}><Download/> Download Report</Button><Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button></div></div>
-    {!hasData && <section className={cn(panel,"mt-12 p-8 text-center")}><p className="text-muted-foreground">No interview data yet. Complete a mock interview to generate your AI-powered report.</p><Link to="/setup"><Button className={cn(violetButton,"mt-4")}>Start an interview</Button></Link></section>}
-    {hasData && <section className="mt-12 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]"><div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">{interview ? "Interview score" : "Cumulative score"}</p><p className="mt-5 text-8xl font-semibold tracking-tight">{score}</p><p className="mt-2 text-sm">{recommendation}</p>{interview && previousCumulative!==null&&<p className="mt-2 flex items-center gap-1 text-xs text-white/80"><TrendingUp className="size-3"/> {score-previousCumulative>=0?"+":""}{score-previousCumulative} vs previous interview</p>}<div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Confidence</span><b className="float-right">{hasScores ? "AI-scored" : "Pending"}</b></div></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{strengths.length ? strengths.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>) : <li className="text-xs text-muted-foreground">Finish an interview to see AI-generated strengths.</li>}</ul></div><div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{improvements.length ? improvements.map((x:string)=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>) : <li className="text-xs text-muted-foreground">Finish an interview to see AI-generated improvements.</li>}</ul></div></section>}
-    {hasData && <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Per-competency scoring</p><h2 className="mt-2 text-3xl font-semibold">Competency breakdown</h2></div><p className="text-xs text-muted-foreground">Each competency scored separately</p></div>
-      <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {displayCompetencies.length ? displayCompetencies.map((c:any,i:number)=>
-          <article key={c.name} className={cn(panel,"flex flex-col p-6")}>
+  async function downloadPdf(){
+    if(!iv) return;
+    setExporting(true);
+    try{
+      const { default: jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+      const doc = new jsPDF();
+      doc.setFontSize(20); doc.text("EchoSphere Interview Report", 14, 20);
+      doc.setFontSize(11);
+      doc.text(`${candidate.name || "Candidate"} · ${iv.role ?? ""} · ${iv.company ?? ""}`, 14, 29);
+      doc.text(`Date: ${iv.created_at ? new Date(iv.created_at).toLocaleString() : "—"}`, 14, 36);
+      doc.setFontSize(15); doc.text(`Overall score: ${overall} / 100`, 14, 48);
+      if(terminated){ doc.setFontSize(11); doc.setTextColor(200,30,30); doc.text(`Interview ended early (${iv.termination_reason ?? "violation"}) — score set to 0.`, 14, 56); doc.setTextColor(0,0,0); }
+      autoTable(doc, {
+        startY: terminated ? 64 : 56,
+        head: [["Category","Score","Evidence","Lost points"]],
+        body: categories.map(c => [c.label, c.score === null ? "—" : String(c.score), c.evidence.join("\n") || "—", c.lost.join("\n") || "—"]),
+        styles: { fontSize: 9, cellWidth: "wrap", valign: "top" },
+        headStyles: { fillColor: [109, 74, 196] },
+        columnStyles: { 2: { cellWidth: 60 }, 3: { cellWidth: 60 } },
+      });
+      let y = (doc as any).lastAutoTable.finalY + 12;
+      doc.setFontSize(13); doc.text("Strengths", 14, y); y += 7; doc.setFontSize(10);
+      (strengths.length?strengths:["—"]).forEach(s => { doc.text(doc.splitTextToSize(`• ${s}`, 180), 14, y); y += 7; });
+      y += 5; doc.setFontSize(13); doc.text("Areas for improvement", 14, y); y += 7; doc.setFontSize(10);
+      (improvements.length?improvements:["—"]).forEach(s => { doc.text(doc.splitTextToSize(`• ${s}`, 180), 14, y); y += 7; });
+      if(recommendation){ y += 5; doc.setFontSize(13); doc.text("Recommendation", 14, y); y += 7; doc.setFontSize(10); doc.text(doc.splitTextToSize(recommendation, 180), 14, y); }
+      doc.save(`echosphere-report-${String(iv.id ?? "interview").slice(0,8)}.pdf`);
+    } finally { setExporting(false); }
+  }
+
+  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
+      <div><Eyebrow>Evidence-backed assessment</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Interview Report</h1>
+      <p className="mt-4 text-muted-foreground">{candidate.name}{iv?.role?` · ${iv.role}`:""}{iv?.company?` · ${iv.company}`:""}{iv?.created_at?` · ${new Date(iv.created_at).toLocaleDateString()}`:""}</p></div>
+      <div className="flex gap-2">
+        <Button variant="outline" disabled={!iv||exporting} className={outlineButton} onClick={()=>void downloadPdf()}>{exporting?<Loader2 className="animate-spin"/>:<Download/>} Download PDF</Button>
+        <Button onClick={()=>navigate({to:"/dashboard"})} className={violetButton}>Back to Dashboard</Button>
+      </div>
+    </div>
+
+    {loading && <section className={cn(panel,"mt-12 p-8 text-center text-muted-foreground")}>Loading your report…</section>}
+    {!loading && !iv && <section className={cn(panel,"mt-12 p-8 text-center")}><p className="text-muted-foreground">No interview data yet. Complete a mock interview to generate your report.</p><Link to="/setup"><Button className={cn(violetButton,"mt-4")}>Start an interview</Button></Link></section>}
+
+    {!loading && iv && <>
+      {terminated && <div className="mt-8 flex items-start gap-3 border border-red-500/40 bg-red-500/10 p-5 text-sm"><AlertTriangle className="mt-0.5 size-5 text-red-500"/><div><b>This interview was ended early.</b><p className="mt-1 text-muted-foreground">Reason: {String(iv.termination_reason ?? "violation").replace(/_/g," ")}. Per the integrity rules, the score for this session is 0.</p></div></div>}
+
+      <section className="mt-10 grid gap-px bg-foreground/10 lg:grid-cols-[260px_1fr_1fr]">
+        <div className="bg-brand p-7 text-white">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Interview score</p>
+          <p className="mt-5 text-8xl font-semibold tracking-tight">{overall}</p>
+          <p className="mt-2 text-sm">{recommendation||(scored?"":"Scoring pending")}</p>
+          <div className="mt-10 border-t border-white/25 pt-4"><span className="text-xs text-white/70">Source</span><b className="float-right">{scored?"AI-scored":"Pending"}</b></div>
+        </div>
+        <div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-success"/> Key strengths</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{strengths.length?strengths.map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>):<li className="text-xs">Nothing recorded for this session.</li>}</ul></div>
+        <div className="bg-card p-7"><h2 className="flex items-center gap-2 font-semibold"><Target className="size-4 text-brand"/> Areas for improvement</h2><ul className="mt-5 space-y-3 text-sm text-muted-foreground">{improvements.length?improvements.map(x=><li key={x} className="border-b border-foreground/10 pb-3">{x}</li>):<li className="text-xs">Nothing recorded for this session.</li>}</ul></div>
+      </section>
+
+      <section className="mt-12">
+        <div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Four separate assessments</p><h2 className="mt-2 text-3xl font-semibold">Category scores</h2></div><p className="text-xs text-muted-foreground">Each category scored on its own evidence</p></div>
+        <div className="mt-6 grid gap-5 md:grid-cols-2">
+          {categories.map(c => <article key={c.key} className={cn(panel,"flex flex-col p-6")}>
             <div className="flex items-start justify-between">
-              <div><h3 className="text-lg font-semibold">{c.name}</h3><p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Confidence AI</p></div>
-              <strong className={cn("text-5xl leading-none",c.score<70?"text-highlight-foreground":"text-brand")}>{c.score}</strong>
+              <div><h3 className="text-lg font-semibold">{c.label}</h3><p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">AI assessment</p></div>
+              <strong className={cn("text-5xl leading-none",c.score===null?"text-muted-foreground":c.score<70?"text-highlight-foreground":"text-brand")}>{c.score===null?"—":c.score}</strong>
             </div>
-            <div className="mt-5 h-2 bg-muted"><div className={cn("h-full",c.score<70?"bg-highlight":"bg-brand")} style={{width:`${c.score}%`}}/></div>
-            <p className="mt-3 flex-1 text-xs leading-5 text-muted-foreground">{c.justification}</p>
-            <Button size="sm" variant="outline" className={cn(outlineButton,"mt-5 self-start")}>View Evidence</Button>
-          </article>) : <p className="col-span-full text-sm text-muted-foreground">Complete and score an interview to see AI-generated competency breakdown.</p>}
-      </div></section>}
-    {hasData && panelScores.length > 0 && <section className="mt-12 grid gap-8 lg:grid-cols-2"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Distinct perspectives</p><h2 className="mt-2 text-3xl font-semibold">Panel scores</h2><div className="mt-5 grid gap-3">{panelScores.map(([n,r,s]:any)=><div key={n} className="flex items-center gap-4 border border-foreground/15 bg-card p-4"><span className="grid size-10 place-items-center bg-brand text-white">{n[0]}</span><div className="flex-1"><b>{n}</b><p className="text-xs text-muted-foreground">{r}</p></div><strong className="text-2xl">{s}</strong></div>)}</div></div><div className="border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Zap className="text-brand"/><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Analytical signal</p><h2 className="mt-1 text-2xl font-semibold">Panel view summary</h2></div></div><p className="mt-5 text-sm leading-6 text-muted-foreground">Scores reflect each panel member’s perspective based on the transcript. Larger gaps between technical and product ratings highlight where to focus next.</p><div className="mt-7 grid grid-cols-2 gap-3"><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Technical view</span><b className="mt-2 block text-3xl">{panelScores[0]?.[2] ?? "—"}</b></div><div className="border border-foreground/15 bg-card p-4"><span className="text-xs text-muted-foreground">Product view</span><b className="mt-2 block text-3xl text-brand">{panelScores[1]?.[2] ?? "—"}</b></div></div></div></section>}
+            <div className="mt-5 h-2 bg-muted"><div className={cn("h-full",(c.score??0)<70?"bg-highlight":"bg-brand")} style={{width:`${c.score??0}%`}}/></div>
+            <div className="mt-5">
+              <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-success"><CheckCircle2 className="size-3"/> Evidence</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground">{c.evidence.length?c.evidence.map((e,i)=><li key={i}>• {e}</li>):<li>No evidence captured.</li>}</ul>
+            </div>
+            <div className="mt-4">
+              <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-red-500"><AlertTriangle className="size-3"/> Where points were lost</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground">{c.lost.length?c.lost.map((e,i)=><li key={i}>• {e}</li>):<li>Nothing recorded.</li>}</ul>
+            </div>
+          </article>)}
+        </div>
+      </section>
+
+      {iv.transcript && <section className="mt-12">
+        <p className="font-mono text-[10px] uppercase tracking-widest text-brand">Session record</p>
+        <h2 className="mt-2 text-3xl font-semibold">Transcript</h2>
+        <pre className={cn(panel,"mt-5 max-h-96 overflow-auto whitespace-pre-wrap p-6 text-xs leading-6 text-muted-foreground")}>{iv.transcript}</pre>
+      </section>}
+    </>}
   </div><EchoAssistant hint="Ask Echo to explain any score."/></main>;
 }
 
