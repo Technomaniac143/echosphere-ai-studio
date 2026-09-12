@@ -895,7 +895,7 @@ export function ReportPage() {
   const improvements: string[] = iv?.improvements ?? [];
   const evidence = (iv?.score_evidence ?? {}) as Record<string,string[]>;
   const lostPoints = (iv?.lost_points ?? {}) as Record<string,string[]>;
-  const categories = CATEGORY_KEYS.map(key => ({
+  const categories = REPORT_CATEGORY_KEYS.map(key => ({
     key,
     label: (CATEGORY_LABELS as Record<string,string>)[key] ?? key,
     score: iv?.[`${key}_score`] === null || iv?.[`${key}_score`] === undefined ? null : Math.round(iv[`${key}_score`]),
