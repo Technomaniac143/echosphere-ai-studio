@@ -865,8 +865,7 @@ export function InterviewPage() {
 }
 function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}[]}) { return <div className="space-y-5 py-2">{messages.map((m,i)=><Message from={m.from} key={i}><p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{m.from==="assistant"?"Alex · AI Interviewer":"You"}</p><MessageContent className={cn("text-sm leading-6",m.from==="user"?"rounded-xl bg-brand px-3 py-2 text-white":"text-foreground/80")}><MessageResponse>{m.text}</MessageResponse></MessageContent></Message>)}</div> }
 
-const CATEGORY_KEYS = ["technical","behavioral","product_manager","hiring_manager"] as const;
-type CategoryKey = typeof CATEGORY_KEYS[number];
+const REPORT_CATEGORY_KEYS = ["technical","behavioral","product_manager","hiring_manager"] as const;
 
 export function ReportPage() {
   const navigate=useNavigate();
