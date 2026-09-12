@@ -86,7 +86,7 @@ function dbToState(db: any): CandidateState {
       fullName: db.full_name || "",
       email: db.email || "",
       phone: db.phone || "",
-      resumeName: db.resume_path ? String(db.resume_path).split("/").pop() : "",
+      resumeName: db.resume_path ? (String(db.resume_path).split("/").pop() ?? "") : "",
       github: db.github_url || "",
       linkedin: db.linkedin_url || "",
       bestProject: db.best_project_url || "",
