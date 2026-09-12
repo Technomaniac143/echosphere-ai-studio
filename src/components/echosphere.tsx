@@ -588,87 +588,139 @@ export function InterviewPage() {
   const [video,setVideo]=useState(true);
   const [paused,setPaused]=useState(false);
   const [messages,setMessages]=useState<{from:"assistant"|"user";text:string}[]>([]);
-  const [thread,setThread]=useState<{company:string;role:string;domain:string;status:string}|null>(null);
+  const [thread,setThread]=useState<any>(null);
   const [saving,setSaving]=useState(false);
-  const { candidate } = useCandidate();
-  const activeAgent = useAgentRotation(!paused, 5000);
-  const { videoRef, events, faceTracking, lookingAway } = useProctoring(!paused);
+  const [notes,setNotes]=useState("");
+  const [confirmEnd,setConfirmEnd]=useState(false);
+  const [ended,setEnded]=useState<{reason:string;message:string}|null>(null);
+  const [difficulty,setDifficultyState]=useState<string>("medium");
+  const { candidate }=useCandidate();
+  const activeAgent=useAgentRotation(!paused,5000);
   const [tool,setTool]=useState<"none"|"Code"|"Whiteboard">("none");
-  const getThread = useServerFn(getInterview);
-  const append = useServerFn(appendMessage);
-  const finish = useServerFn(saveInterviewResults);
-  const score = useServerFn(scoreInterview);
+
+  const getThread=useServerFn(getInterview);
+  const append=useServerFn(appendMessage);
+  const finish=useServerFn(saveInterviewResults);
+  const score=useServerFn(scoreInterview);
+  const terminate=useServerFn(terminateInterview);
+  const persistNotes=useServerFn(saveNotes);
+  const reportDevices=useServerFn(setDeviceStatus);
+  const adapt=useServerFn(adaptDifficulty);
+  const moderate=useServerFn(moderateSpeech);
+
+  const transcriptOf=useCallback((list:{from:string;text:string}[])=>list.map(m=>`[${m.from}] ${m.text}`).join("\n"),[]);
+
+  const handleTerminated=useCallback(async(count:number)=>{
+    setEnded({reason:"cheating",message:`This interview was ended after ${count} monitoring warnings. Your score for this session is 0.`});
+    try{ await score({data:{threadId,transcript:transcriptOf(messages)}}); }catch{ /* report will show what was saved */ }
+  },[score,threadId,messages,transcriptOf]);
+
+  const { videoRef, events, faceTracking, lookingAway, warnings, limit }=useProctoring(!paused&&!ended,threadId,handleTerminated);
 
   const [loadError,setLoadError]=useState<string|null>(null);
-  useEffect(() => {
-    if (!threadId) return;
-    let attempts = 0;
-    async function load() {
-      try {
-        const t = await getThread({ data: { threadId } });
-        if (!t) { navigate({ to: "/setup" }); return; }
-        setThread(t as any);
-        const transcript = (t as any).transcript || "";
-        const parsed = transcript.split("\n").filter(Boolean).map((line: string) => {
-          const m = line.match(/^\[(assistant|user)\]\s*(.*)$/);
-          return m ? { from: m[1] as "assistant"|"user", text: m[2] } : null;
+  useEffect(()=>{
+    if(!threadId) return;
+    let attempts=0;
+    async function load(){
+      try{
+        const t:any=await getThread({data:{threadId}});
+        if(!t){ navigate({to:"/setup"}); return; }
+        setThread(t);
+        setNotes(t.notes ?? "");
+        setDifficultyState(t.difficulty ?? "medium");
+        if(t.status==="terminated") setEnded({reason:t.termination_reason ?? "ended",message:"This interview was already ended. Your score for this session is 0."});
+        const parsed=String(t.transcript||"").split("\n").filter(Boolean).map((line:string)=>{
+          const m=line.match(/^\[(assistant|user)\]\s*(.*)$/);
+          return m?{from:m[1] as "assistant"|"user",text:m[2]!}:null;
         }).filter(Boolean) as {from:"assistant"|"user";text:string}[];
         setMessages(parsed);
         setLoadError(null);
-      } catch (e: any) {
+      }catch(e:any){
         attempts++;
-        if (attempts < 3) {
-          window.setTimeout(load, 800);
-        } else {
-          setLoadError(e?.message || "Could not load this interview.");
-        }
+        if(attempts<3) window.setTimeout(load,800);
+        else setLoadError(e?.message||"Could not load this interview.");
       }
     }
     load();
-  }, [threadId, getThread, navigate]);
+  },[threadId,getThread,navigate]);
 
-  const onLiveTranscript = useCallback((live: LiveMessage[]) => {
-    if (live.length === 0) return;
-    setMessages(live);
-    const last = live[live.length - 1];
-    if (last) {
-      append({ data: { threadId, role: last.from === "user" ? "user" : "assistant", content: last.text } }).catch(() => {});
+  // Record verified device state for this session.
+  useEffect(()=>{
+    if(!threadId) return;
+    reportDevices({data:{threadId,camera:video?"active":"inactive",microphone:muted?"inactive":"active"}}).catch(()=>{});
+  },[threadId,video,muted,reportDevices]);
+
+  /** Language check + adaptive difficulty run on real candidate speech only. */
+  const reviewedRef=useRef(0);
+  const reviewSpeech=useCallback(async(list:{from:string;text:string}[])=>{
+    const userTurns=list.filter(m=>m.from==="user");
+    if(userTurns.length<=reviewedRef.current) return;
+    reviewedRef.current=userTurns.length;
+    const last=userTurns[userTurns.length-1];
+    if(last&&last.text.trim().length>3){
+      try{
+        const result=await moderate({data:{threadId,text:last.text}});
+        if(result.violation){
+          setEnded({reason:"language",message:"This interview was ended because inappropriate language was detected. Your score for this session is 0."});
+          return;
+        }
+      }catch{ /* moderation must never break the interview */ }
     }
-  }, [append, threadId]);
+    if(userTurns.length%3===0){
+      try{
+        const next=await adapt({data:{threadId,transcript:transcriptOf(list),current:difficulty as any}});
+        setDifficultyState(next.next);
+      }catch{ /* keep the current difficulty */ }
+    }
+  },[moderate,adapt,threadId,difficulty,transcriptOf]);
 
-  async function command(text:string){
-    const q=text.toLowerCase();
-    const userMsg = { from: "user" as const, text };
-    setMessages(m=>[...m,userMsg]);
+  const onLiveTranscript=useCallback((live:LiveMessage[])=>{
+    if(live.length===0) return;
+    setMessages(live);
+    const last=live[live.length-1];
+    if(last) append({data:{threadId,role:last.from==="user"?"user":"assistant",content:last.text}}).catch(()=>{});
+    void reviewSpeech(live);
+  },[append,threadId,reviewSpeech]);
+
+  async function sendTyped(text:string){
+    const next=[...messages,{from:"user" as const,text}];
+    setMessages(next);
     setSaving(true);
-    try { await append({ data: { threadId, role: "user", content: text } }); } catch (e) { console.error(e); }
+    try{ await append({data:{threadId,role:"user",content:text}}); }catch(e){ console.error(e); }
     setSaving(false);
-    setEcho("thinking");
-    window.setTimeout(async () => {
-      let reply="I’m ready when you are.";
-      if(q.includes("notes")){setWorkspace("Notes");reply="Opening your notes."}
-      else if(q.includes("repeat")){reply="Repeating the current question: How would you design a globally distributed URL shortening service?"}
-      else if(q.includes("pause")){setPaused(true);reply="Interview paused."}
-      const assistantMsg = { from: "assistant" as const, text: reply };
-      setMessages(m=>[...m,assistantMsg]);
-      setSaving(true);
-      try { await append({ data: { threadId, role: "assistant", content: reply } }); } catch (e) { console.error(e); }
-      setSaving(false);
-      setEcho("speaking");
-      window.setTimeout(()=>setEcho("idle"),1800);
-    }, 900);
+    void reviewSpeech(next);
   }
 
-  async function endInterview() {
-    const transcript = messages.map(m => `[${m.from}] ${m.text}`).join("\n");
+  async function completeInterview(){
+    const transcript=transcriptOf(messages);
     setSaving(true);
-    try {
-      await finish({ data: { threadId, transcript, notes: "" } });
-      await score({ data: { threadId, transcript } });
-    } catch (e) { console.error(e); }
+    try{
+      await finish({data:{threadId,transcript,notes}});
+      await score({data:{threadId,transcript}});
+    }catch(e){ console.error(e); }
     setSaving(false);
-    navigate({ to: "/report", search: { threadId } });
+    navigate({to:"/report",search:{threadId}});
   }
+
+  async function endEarly(){
+    setConfirmEnd(false);
+    setSaving(true);
+    const transcript=transcriptOf(messages);
+    try{
+      await terminate({data:{threadId,reason:"candidate_ended",detail:"Candidate ended the meeting before completing the interview.",transcript}});
+      await score({data:{threadId,transcript}});
+    }catch(e){ console.error(e); }
+    setSaving(false);
+    navigate({to:"/report",search:{threadId}});
+  }
+
+  function persistNotesNow(value:string){
+    setNotes(value);
+    persistNotes({data:{threadId,notes:value}}).catch(()=>{});
+  }
+
+  const userTurns=messages.filter(m=>m.from==="user").length;
+  const canComplete=userTurns>=3;
 
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground">
     <header className="flex h-16 items-center justify-between border-b border-foreground/10 bg-card px-5 md:px-8">
@@ -681,27 +733,37 @@ export function InterviewPage() {
         {i<stages.length-1&&<span className={cn("mx-3 mb-4 h-px w-12",i===0?"bg-success":"bg-foreground/15")}/>}
       </div>)}</div>
       <div className="flex items-center gap-3">
+        <span className="hidden font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:block">Difficulty · {difficulty}</span>
         {saving&&<span className="text-xs text-muted-foreground">Saving…</span>}
-        <button aria-label="Exit interview" onClick={endInterview} className="grid size-9 place-items-center rounded-full border border-foreground/15 bg-card text-muted-foreground hover:bg-muted"><X className="size-4"/></button>
+        {canComplete&&!ended&&<Button size="sm" onClick={completeInterview} className={violetButton}>Finish & score</Button>}
+        <button aria-label="End meeting" onClick={()=>setConfirmEnd(true)} className="grid size-9 place-items-center rounded-full border border-foreground/15 bg-card text-muted-foreground hover:bg-muted"><X className="size-4"/></button>
       </div>
     </header>
+
+    {loadError&&<div className="border-b border-destructive/30 bg-destructive/10 px-5 py-3 text-sm text-destructive">{loadError}</div>}
+    {warnings>0&&!ended&&<div className="flex items-center gap-2 border-b border-highlight bg-highlight/20 px-5 py-3 text-sm"><AlertTriangle className="size-4"/> Warning {warnings} of {limit}: stay focused on the camera and this window. At {limit} warnings the interview ends with a score of 0.</div>}
 
     <div className="grid gap-5 p-5 lg:grid-cols-[260px_1fr_360px]">
       <aside className="h-fit rounded-2xl border border-foreground/10 bg-card p-5 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="grid size-11 place-items-center overflow-hidden rounded-full bg-brand/10 text-lg font-bold text-brand">{candidate.photo?<img src={candidate.photo} alt="" className="size-full object-cover"/>:candidate.name[0]}</span>
-          <div><p className="font-semibold">Candidate</p><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"><CheckCircle2 className="size-3"/> Verified</span></div>
+          <div><p className="font-semibold">{candidate.name||"Candidate"}</p><span className="mt-1 inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success"><CheckCircle2 className="size-3"/> Verified</span></div>
         </div>
-        {[["ROLE",thread?.role||"Software Engineer",Clock3],["DOMAIN",thread?.domain||"General",Clock3],["TOTAL SESSIONS",`${candidate.history.length} completed`,Clock3]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
+        {[["ROLE",thread?.role||"—"],["DOMAIN",thread?.domain||"—"],["TOTAL SESSIONS",`${candidate.history.length} recorded`]].map(([l,v]:any,i)=><div key={l} className={cn("border-t border-foreground/10 py-4",i===0&&"mt-5")}>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{l}</p>
           <p className="mt-1 font-semibold">{v}</p>
         </div>)}
+        {thread?.github_context&&<div className="border-t border-foreground/10 py-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Project in scope</p>
+          <p className="mt-1 text-sm font-semibold">{thread.github_context.repo}</p>
+        </div>}
         <div className="border-t border-foreground/10 pt-4">
           <AgentPanel activeIndex={activeAgent}/>
         </div>
         <div className="mt-4 border-t border-foreground/10 pt-4">
           <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground"><Eye className="size-3"/> Integrity monitor</p>
-          <p className="mt-2 text-xs text-muted-foreground">{faceTracking?"Face tracking active · local only":"Face tracking unavailable — camera or model not loaded"}</p>
+          <p className="mt-2 text-xs text-muted-foreground">{faceTracking==="on"?"Face tracking active":faceTracking==="unavailable"?"Face tracking unavailable — check your camera":"Starting face tracking…"}</p>
+          <p className="mt-1 text-xs font-semibold">{warnings} of {limit} warnings used</p>
           <div className="mt-3 space-y-1.5">
             {events.length===0
               ? <p className="text-xs text-success">No flags recorded.</p>
@@ -712,11 +774,11 @@ export function InterviewPage() {
 
       <section>
         <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-[#0d1117] shadow-sm">
-          <LiveInterviewer threadId={threadId} company={thread?.company??"EchoSphere"} role={thread?.role??"Software Engineer"} domain={thread?.domain??"General"} candidateName={candidate.name} muted={muted} paused={paused} onTranscript={onLiveTranscript}/>
+          <LiveInterviewer threadId={threadId} company={thread?.company??"EchoSphere"} role={thread?.role??"Software Engineer"} domain={thread?.domain??"General"} candidateName={candidate.name} muted={muted||!!ended} paused={paused||!!ended} onTranscript={onLiveTranscript}/>
           <span className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white"><i className="size-2 rounded-full bg-success"/> EchoSphere AI • LIVE</span>
           <div className={cn("absolute right-4 top-4 w-32 overflow-hidden rounded-2xl border-2 shadow-lg md:w-40",lookingAway?"border-red-500":"border-white/70")}>
-            <video ref={videoRef} muted playsInline className={cn("aspect-square w-full bg-black object-cover",(!faceTracking||!video)&&"hidden")}/>
-            {(!faceTracking||!video)&&<img src={candidate.photo??candidateImage} alt="Candidate video preview" className="aspect-square w-full object-cover"/>}
+            <video ref={videoRef} muted playsInline className={cn("aspect-square w-full bg-black object-cover",(faceTracking!=="on"||!video)&&"hidden")}/>
+            {(faceTracking!=="on"||!video)&&<img src={candidate.photo??candidateImage} alt="Candidate video preview" className="aspect-square w-full object-cover"/>}
             <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">You</span>
             {lookingAway&&<span className="absolute inset-x-0 top-0 bg-red-500 py-0.5 text-center text-[10px] font-semibold text-white">Pay attention</span>}
           </div>
@@ -724,13 +786,15 @@ export function InterviewPage() {
             <div className="flex items-center gap-3 rounded-full bg-[#111827]/90 px-3 py-2.5 shadow-xl backdrop-blur">
               <button onClick={()=>setMuted(!muted)} aria-label="Toggle microphone" className={cn("grid size-11 place-items-center rounded-full text-white",muted?"bg-red-500":"bg-white/15 hover:bg-white/25")}>{muted?<MicOff className="size-5"/>:<Mic className="size-5"/>}</button>
               <button onClick={()=>setVideo(!video)} aria-label="Toggle camera" className="grid size-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25">{video?<Video className="size-5"/>:<VideoOff className="size-5"/>}</button>
-              <button onClick={endInterview} aria-label="End interview" className="grid size-11 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="size-5"/></button>
+              <button onClick={()=>setPaused(p=>!p)} aria-label="Pause interview" className="grid size-11 place-items-center rounded-full bg-white/15 text-white hover:bg-white/25">{paused?<Play className="size-5"/>:<Pause className="size-5"/>}</button>
+              <button onClick={()=>setConfirmEnd(true)} aria-label="End meeting" className="grid size-11 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600"><X className="size-5"/></button>
             </div>
           </div>
-          {paused&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/60 backdrop-blur-sm"><div className="text-center text-white"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className={cn(violetButton,"mt-5 rounded-full")}><Play/> Resume interview</Button></div></div>}
+          {paused&&!ended&&<div className="absolute inset-0 z-20 grid place-items-center bg-black/60 backdrop-blur-sm"><div className="text-center text-white"><CirclePause className="mx-auto size-12 text-highlight"/><h2 className="mt-3 text-3xl font-semibold">Interview paused</h2><Button onClick={()=>setPaused(false)} className={cn(violetButton,"mt-5 rounded-full")}><Play/> Resume interview</Button></div></div>}
+          {ended&&<div className="absolute inset-0 z-30 grid place-items-center bg-black/80 p-6 backdrop-blur-sm"><div className="max-w-md text-center text-white"><AlertTriangle className="mx-auto size-12 text-red-400"/><h2 className="mt-3 text-3xl font-semibold">Interview ended</h2><p className="mt-3 text-sm text-white/80">{ended.message}</p><Button onClick={()=>navigate({to:"/report",search:{threadId}})} className={cn(violetButton,"mt-6")}>View report</Button></div></div>}
         </div>
         <div className="mt-4 flex items-center justify-center gap-3 rounded-2xl border border-foreground/10 bg-card py-5 text-lg font-medium shadow-sm">
-          {agents[activeAgent]!.name} is {paused?"paused":"listening"}…
+          {agents[activeAgent]!.name} is {ended?"finished":paused?"paused":"listening"}…
           <span className="flex items-end gap-[3px]">{[.5,.9,.6,1,.45].map((h,i)=><i key={i} className="echo-wave w-[3px] rounded-full bg-brand" style={{height:`${h*20}px`,animationDelay:`${i*90}ms`}}/>)}</span>
         </div>
 
@@ -756,7 +820,7 @@ export function InterviewPage() {
           {workspace==="Conversation"?<>
             <div className="flex items-center justify-between px-4 py-3 text-sm">
               <span className="flex items-center gap-2 font-medium"><i className="size-2 rounded-full bg-success"/> Live Transcription</span>
-              <button onClick={()=>setMessages([])} className="text-xs font-medium text-red-500">Clear</button>
+              <span className="text-xs text-muted-foreground">{messages.length} entries</span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4">
               {messages.length===0
@@ -764,23 +828,39 @@ export function InterviewPage() {
                 : <Conversation messages={messages}/>}
             </div>
             <div className="border-t border-foreground/10 p-3">
-              <PromptInput onSubmit={({text})=>{ if(text) command(text); }}><PromptInputBody><PromptInputTextarea placeholder="Type or say ‘Hey Echo…’"/></PromptInputBody><PromptInputFooter><PromptInputTools><button onClick={()=>setEcho(echo==="listening"?"idle":"listening")} type="button" className="p-2"><Mic className="size-4"/></button></PromptInputTools><PromptInputSubmit/></PromptInputFooter></PromptInput>
+              <PromptInput onSubmit={({text})=>{ if(text&&!ended) void sendTyped(text); }}><PromptInputBody><PromptInputTextarea placeholder="Type your answer, or just speak"/></PromptInputBody><PromptInputFooter><PromptInputTools><button onClick={()=>setEcho(echo==="listening"?"idle":"listening")} type="button" className="p-2"><Mic className="size-4"/></button></PromptInputTools><PromptInputSubmit/></PromptInputFooter></PromptInput>
             </div>
-          </>:<textarea defaultValue="Ask about data consistency tradeoffs.&#10;&#10;Mention Kafka partition strategy." className="m-4 min-h-64 flex-1 resize-none rounded-xl border border-foreground/15 bg-muted/40 p-4 text-sm outline-none focus:border-brand"/>}
+          </>:<textarea value={notes} onChange={e=>persistNotesNow(e.target.value)} placeholder="Your private notes are saved with this interview." className="m-4 min-h-64 flex-1 resize-none rounded-xl border border-foreground/15 bg-muted/40 p-4 text-sm outline-none focus:border-brand"/>}
         </div>
 
         <div className="rounded-2xl border border-foreground/10 bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 font-semibold"><FileText className="size-4 text-brand"/> Interview Summary</span>
-            <span className="rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-medium text-success">Updated</span>
+            <span className="flex items-center gap-2 font-semibold"><FileText className="size-4 text-brand"/> Session status</span>
+            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium",ended?"bg-red-500/10 text-red-500":"bg-success/10 text-success")}>{ended?"Ended":"Live"}</span>
           </div>
-          <div className="mt-4 rounded-xl bg-muted/50 p-5 text-center">
-            <p className="font-medium">Listening for key points…</p>
-            <p className="mt-2 text-sm text-muted-foreground">I will summarize the detected technical concepts and behavioral traits here as we talk.</p>
+          <div className="mt-4 rounded-xl bg-muted/50 p-5 text-sm">
+            <p className="flex justify-between"><span className="text-muted-foreground">Your answers</span><b>{userTurns}</b></p>
+            <p className="mt-2 flex justify-between"><span className="text-muted-foreground">Current difficulty</span><b className="capitalize">{difficulty}</b></p>
+            <p className="mt-2 flex justify-between"><span className="text-muted-foreground">Warnings</span><b>{warnings}/{limit}</b></p>
+            <p className="mt-4 text-xs text-muted-foreground">Your full report, with scores and evidence, is generated when the interview finishes.</p>
           </div>
         </div>
       </aside>
     </div>
+
+    {confirmEnd&&<div className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-5">
+      <div className="w-full max-w-md border border-foreground/20 bg-white p-6 shadow-2xl">
+        <h2 className="flex items-center gap-2 text-xl font-semibold"><AlertTriangle className="size-5 text-red-500"/> End this meeting?</h2>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          If you leave before the interview is complete, this session is recorded as ended early and <b className="text-foreground">your score for it will be 0</b>. This cannot be undone.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <Button variant="outline" className={outlineButton} onClick={()=>setConfirmEnd(false)}>Continue interview</Button>
+          {canComplete&&<Button variant="outline" className={outlineButton} onClick={()=>{setConfirmEnd(false);void completeInterview();}}>Finish &amp; score properly</Button>}
+          <Button className="rounded-none bg-red-500 text-white hover:bg-red-600" onClick={()=>void endEarly()}>End meeting (score 0)</Button>
+        </div>
+      </div>
+    </div>}
   </main>;
 }
 function Conversation({messages}:{messages:{from:"assistant"|"user";text:string}[]}) { return <div className="space-y-5 py-2">{messages.map((m,i)=><Message from={m.from} key={i}><p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{m.from==="assistant"?"Alex · AI Interviewer":"You"}</p><MessageContent className={cn("text-sm leading-6",m.from==="user"?"rounded-xl bg-brand px-3 py-2 text-white":"text-foreground/80")}><MessageResponse>{m.text}</MessageResponse></MessageContent></Message>)}</div> }
