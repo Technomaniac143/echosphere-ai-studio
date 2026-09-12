@@ -445,6 +445,8 @@ export function SystemCheckPage() {
   const { candidate, setPhoto } = useCandidate();
   const [draftPhoto,setDraftPhoto]=useState<string|null>(null);
   const [camError,setCamError]=useState<string|null>(null);
+  const [screenError,setScreenError]=useState<string|null>(null);
+  const [surface,setSurface]=useState<string|null>(null);
 
   const checkNetwork=useCallback(async()=>{
     setStatuses(p=>[p[0]!,p[1]!,p[2]!,"CHECKING"]);
@@ -473,7 +475,6 @@ export function SystemCheckPage() {
       streamRef.current=s;
       setCamera(true);
       setStatuses(p=>["PASS",s.getAudioTracks().length?"PASS":"FAIL",p[2]!,p[3]!]);
-      // attach after the <video> renders
       window.setTimeout(()=>{ if(video.current){ video.current.srcObject=s; void video.current.play().catch(()=>{}); } },0);
       const AudioCtor=window.AudioContext??(window as any).webkitAudioContext;
       const ctx:AudioContext=new AudioCtor();
@@ -485,28 +486,52 @@ export function SystemCheckPage() {
       rafRef.current=requestAnimationFrame(tick);
     }catch(e:any){
       setCamera(false);
-      setCamError(e?.name==="NotAllowedError"?"Camera and microphone access was blocked. Allow it in your browser and try again.":e?.message??"Could not start your camera.");
+      setCamError(e?.name==="NotAllowedError"?"Camera and microphone access was blocked. Allow it in your browser settings and try again.":e?.message??"Could not start your camera.");
       setStatuses(p=>["FAIL","FAIL",p[2]!,p[3]!]);
     }
   }
 
-  function screen(){
-    if(screenRef.current){ screenRef.current.getTracks().forEach(t=>t.stop()); screenRef.current=null; setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]); return; }
-    setStatuses(p=>[p[0]!,p[1]!,"CHECKING",p[3]!]);
-    navigator.mediaDevices?.getDisplayMedia?.({video:true}).then(s=>{
-      screenRef.current=s;
-      s.getVideoTracks()[0]?.addEventListener("ended",()=>{ screenRef.current=null; setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]); });
-      setStatuses(p=>[p[0]!,p[1]!,"PASS",p[3]!]);
-    }).catch(()=>setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]));
+  function stopScreen(){
+    screenRef.current?.getTracks().forEach(t=>t.stop());
+    screenRef.current=null;
+    setSurface(null);
+    setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]);
   }
-  const ready=statuses[0]==="PASS"&&statuses[1]==="PASS"&&statuses[3]==="PASS";
 
-  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-10"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Eyebrow>Pre-flight check</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">System environment check</h1></div><div className={cn("border px-5 py-3 font-mono text-sm",ready?"border-success text-success":"border-highlight bg-highlight/10 text-highlight-foreground")}><span className="mr-3 inline-block size-2 rounded-full bg-current"/>{ready?"READY":"ACTION REQUIRED"}</div></div>
+  /** The interview requires the WHOLE screen — a tab or single window is rejected. */
+  async function shareScreen(){
+    if(screenRef.current){ stopScreen(); return; }
+    setScreenError(null);
+    setStatuses(p=>[p[0]!,p[1]!,"CHECKING",p[3]!]);
+    try{
+      const s=await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:"monitor"} as any,audio:false});
+      const track=s.getVideoTracks()[0];
+      const shared=(track?.getSettings() as any)?.displaySurface ?? null;
+      setSurface(shared);
+      if(shared&&shared!=="monitor"){
+        s.getTracks().forEach(t=>t.stop());
+        setScreenError(`You shared a ${shared==="browser"?"browser tab":"single window"}. Press “Share Screen Now” again and choose Entire Screen.`);
+        setStatuses(p=>[p[0]!,p[1]!,"FAIL",p[3]!]);
+        return;
+      }
+      screenRef.current=s;
+      track?.addEventListener("ended",()=>{ screenRef.current=null; setSurface(null); setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]); });
+      setStatuses(p=>[p[0]!,p[1]!,"PASS",p[3]!]);
+    }catch(e:any){
+      setScreenError(e?.name==="NotAllowedError"?"Screen sharing was declined. It is required to start the interview.":e?.message??"Screen sharing could not be started.");
+      setStatuses(p=>[p[0]!,p[1]!,"NOT ACTIVE",p[3]!]);
+    }
+  }
+
+  // All four device checks plus a profile photo are required before continuing.
+  const ready=statuses[0]==="PASS"&&statuses[1]==="PASS"&&statuses[2]==="PASS"&&statuses[3]==="PASS"&&!!candidate.photo;
+
+  return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header/><div className="mx-auto max-w-6xl px-5 py-10"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><Eyebrow>Pre-flight check</Eyebrow><h1 className="text-4xl font-semibold tracking-tight md:text-6xl">System environment check</h1><p className="mt-3 max-w-2xl text-sm text-muted-foreground">Camera, microphone, entire-screen sharing, network and a profile photo are all required before an interview can begin.</p></div><div className={cn("border px-5 py-3 font-mono text-sm",ready?"border-success text-success":"border-highlight bg-highlight/10 text-highlight-foreground")}><span className="mr-3 inline-block size-2 rounded-full bg-current"/>{ready?"READY":"ACTION REQUIRED"}</div></div>
     <div className="mt-9 grid gap-4 md:grid-cols-2"><CheckCard icon={<Camera/>} n="01" title="Camera Access & Video Preview" status={statuses[0]!}><div className="relative aspect-video overflow-hidden bg-muted"><video ref={video} autoPlay muted playsInline className={cn("size-full object-cover",!camera&&"hidden")}/>{!camera&&<div className="grid size-full place-items-center px-6 text-center"><div className="space-y-3">{camError&&<p className="text-xs text-destructive">{camError}</p>}<Button onClick={enableCamera} className={violetButton}><Camera/> {camError?"Try again":"Enable Camera & Microphone"}</Button></div></div>}</div></CheckCard>
     <CheckCard icon={<Mic/>} n="02" title="Microphone Access & Input Level" status={statuses[1]!}><div className="flex h-28 items-end gap-1 bg-muted px-8 pb-4">{Array.from({length:28},(_,i)=><i key={i} className="w-1 bg-brand transition-[height] duration-75" style={{height:`${Math.max(6,Math.min(100,level*160*(0.55+((i*37)%100)/120)))}%`}}/>)}</div>{camera&&<p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Speak to see your live input level</p>}</CheckCard>
-    <CheckCard icon={<MonitorUp/>} n="03" title="Screen Sharing Verification" status={statuses[2]!}><div className="flex h-28 items-center justify-between bg-muted px-5"><span className="text-sm text-muted-foreground">{statuses[2]==="PASS"?"Screen sharing verified":"Screen Sharing Not Started"}</span><Button onClick={screen} variant="outline" className={outlineButton}>{statuses[2]==="PASS"?"Stop Sharing":"Share Screen Now"}</Button></div></CheckCard>
+    <CheckCard icon={<MonitorUp/>} n="03" title="Entire Screen Sharing (required)" status={statuses[2]!}><div className="flex h-28 items-center justify-between gap-4 bg-muted px-5"><div><p className="text-sm text-muted-foreground">{statuses[2]==="PASS"?"Entire screen is being shared":"Select “Entire Screen” when prompted"}</p>{surface&&<p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Shared: {surface}</p>}</div><Button onClick={()=>void shareScreen()} variant="outline" className={outlineButton}>{statuses[2]==="PASS"?"Stop Sharing":"Share Screen Now"}</Button></div>{screenError&&<p className="mt-2 text-xs text-destructive">{screenError}</p>}</CheckCard>
     <CheckCard icon={<Network/>} n="04" title="Real Network & Backend Health" status={statuses[3]!}><div className="grid h-28 grid-cols-2 place-items-center bg-muted"><div><p className="text-xs text-muted-foreground">Backend Reachable</p><b className={statuses[3]==="PASS"?"text-success":"text-destructive"}>{statuses[3]==="PASS"?"Yes":statuses[3]==="CHECKING"?"Checking…":"No"}</b></div><div><p className="text-xs text-muted-foreground">Latency</p><b>{latency!==null?`${latency} ms`:"—"}</b></div></div><button onClick={()=>void checkNetwork()} className="mt-3 flex items-center gap-2 text-xs text-brand"><RefreshCw className="size-3"/> Re-check Connectivity</button></CheckCard>
-    <div className="md:col-span-2"><CheckCard icon={<Aperture/>} n="05" title="Candidate Profile Photo" status={candidate.photo?"PASS":"NOT ACTIVE"}>
+    <div className="md:col-span-2"><CheckCard icon={<Aperture/>} n="05" title="Candidate Profile Photo (required)" status={candidate.photo?"PASS":"NOT ACTIVE"}>
       <div className="grid gap-5 sm:grid-cols-[220px_1fr]">
         <div className="grid aspect-square place-items-center overflow-hidden border border-foreground/15 bg-muted">
           {(draftPhoto||candidate.photo)
@@ -526,7 +551,8 @@ export function SystemCheckPage() {
         </div>
       </div>
     </CheckCard></div></div>
-    <div className="mt-8 flex justify-end"><Button disabled={!ready} onClick={()=>navigate({to:"/video-test"})} className={cn(violetButton,"disabled:shadow-none")}>Continue to Sample Video <ArrowRight/></Button></div></div></main>;
+    {!ready&&<p className="mt-6 text-right text-xs text-muted-foreground">Every check above must pass before you can continue.</p>}
+    <div className="mt-3 flex justify-end"><Button disabled={!ready} onClick={()=>navigate({to:"/video-test"})} className={cn(violetButton,"disabled:shadow-none")}>Continue to Sample Video <ArrowRight/></Button></div></div></main>;
 }
 function CheckCard({n,title,status,icon,children}:{n:string;title:string;status:CheckStatus;icon:ReactNode;children:ReactNode}) { return <section className={cn(panel,"p-5")}><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3 text-sm font-semibold"><span className="font-mono text-[10px] text-muted-foreground">{n}</span><span className="text-brand">{icon}</span>{title}</div><Status status={status}/></div>{children}</section> }
 function Status({status}:{status:CheckStatus}) { return <span className={cn("border px-2 py-1 font-mono text-[9px]",status==="PASS"?"border-success/40 text-success":status==="FAIL"?"border-red-400 text-red-400":status==="CHECKING"?"border-info text-info":"border-foreground/20 text-muted-foreground")}>{status}</span> }
