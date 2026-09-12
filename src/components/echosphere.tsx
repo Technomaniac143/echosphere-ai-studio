@@ -992,48 +992,60 @@ export function ReportPage() {
   </div><EchoAssistant hint="Ask Echo to explain any score."/></main>;
 }
 
-const roadmapSteps = [
-  ["Sharpen system-design tradeoffs","Technical","Week 1–2","done"],
-  ["Quantify project outcomes with metrics","Communication","Week 2–3","done"],
-  ["Connect technical decisions to customer impact","Product Thinking","Week 3–4","done"],
-  ["Practice STAR-format behavioral responses","Behavioral","Week 4–5","done"],
-  ["Deep-dive distributed systems fundamentals","Technical","Week 5–6","done"],
-  ["Lead a mock design review end-to-end","Leadership","Week 6–7","done"],
-  ["Estimate scale: QPS, storage, and latency math","Problem Solving","Week 7–8","current"],
-  ["Frame ambiguous prompts with clarifying questions","Adaptability","Week 8–9","upcoming"],
-  ["Run a full product-sense mock interview","Product Thinking","Week 9–10","upcoming"],
-  ["Final mixed-panel mock and review","All dimensions","Week 10","upcoming"],
-] as const;
-
 export function RoadmapPage() {
   const navigate = useNavigate();
   const { candidate } = useCandidate();
   const getRoadmapFn = useServerFn(getRoadmap);
+  const updateStep = useServerFn(updateRoadmapStep);
   const [roadmap, setRoadmap] = useState<{steps:any[];done:number;current:any}|null>(null);
-  useEffect(() => {
-    getRoadmapFn({ data: undefined }).then(setRoadmap).catch(console.error);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    getRoadmapFn({ data: undefined }).then(r => setRoadmap(r as any)).catch(console.error).finally(() => setLoading(false));
   }, [getRoadmapFn]);
-  const steps = roadmap?.steps ?? roadmapSteps.map(s => ({ title: s[0], dimension: s[1], weeks: s[2], status: s[3] }));
-  const done = roadmap?.done ?? steps.filter((s:any) => s.status === "done").length;
-  const current = roadmap?.current ?? steps.find((s:any) => s.status === "current");
+  useEffect(load, [load]);
+
+  const steps: any[] = roadmap?.steps ?? [];
+  const total = steps.length;
+  const done = steps.filter(s => s.status === "done").length;
+  const current = steps.find(s => s.status === "current");
+  const upcoming = steps.filter(s => s.status === "upcoming").length;
+  const inProgress = steps.filter(s => s.status === "current").length;
+
+  async function complete(step: any) {
+    await updateStep({ data: { id: step.id, status: "done" } }).catch(console.error);
+    load();
+  }
+
   return <main className="min-h-screen bg-[#f5f1f8] text-foreground"><Header /><div className="mx-auto max-w-6xl px-5 py-12">
     <div className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
-      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your 10-Step Plan</h1><p className="mt-4 text-muted-foreground">{candidate.name} · {(candidate as any).targetRole || "Interview"} track · Updated after your last mock interview</p></div>
+      <div><Eyebrow>Personalized roadmap</Eyebrow><h1 className="text-5xl font-semibold tracking-[-.05em] md:text-7xl">Your Practice Plan</h1><p className="mt-4 text-muted-foreground">{candidate.name}{(candidate as any).targetRole?` · ${(candidate as any).targetRole} track`:""}{candidate.history.length?` · Updated after ${candidate.history.length} interview${candidate.history.length>1?"s":""}`:""}</p></div>
       <div className="flex gap-2"><Button variant="outline" className={outlineButton} onClick={() => navigate({ to: "/dashboard" })}>Back to Dashboard</Button><Link to="/setup"><Button className={violetButton}><Plus /> Start Practice</Button></Link></div>
     </div>
-    <section className="mt-12 grid gap-px bg-foreground/10 md:grid-cols-3">
-      <div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Overall progress</p><p className="mt-5 text-8xl font-semibold tracking-tight">{done}<span className="text-4xl text-white/60">/10</span></p><p className="mt-2 text-sm">On pace for your target date</p></div>
-      <div className="bg-card p-7"><div className="flex items-center gap-3"><Clock3 className="size-4 text-brand" /><h2 className="font-semibold">Current focus</h2></div><p className="mt-5 text-2xl font-semibold leading-8">{current?.title ?? "Estimate scale: QPS, storage, and latency math"}</p><p className="mt-3 text-sm text-muted-foreground">{current?.weeks ?? "Week 7–8"} · {current?.dimension ?? "Problem Solving"}</p><button className="mt-6 inline-flex items-center text-xs font-semibold text-brand">Continue this step <ArrowRight className="ml-1 size-3" /></button></div>
-      <div className="bg-card p-7"><div className="flex items-center gap-3"><Target className="size-4 text-brand" /><h2 className="font-semibold">Weekly target</h2></div><p className="mt-5 text-2xl font-semibold">4 practice hours</p><p className="mt-3 text-sm text-muted-foreground">2.5 of 4 hours completed this week.</p><div className="mt-5 h-2 bg-muted"><div className="h-full w-[62%] bg-highlight" /></div></div>
-    </section>
-    <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Milestone timeline</p><h2 className="mt-2 text-3xl font-semibold">Step by step</h2></div><p className="text-xs text-muted-foreground">{done} completed · 1 in progress · {10 - done - 1} upcoming</p></div>
-      <div className="mt-6 border-t border-foreground/20">{steps.map((s: any, i: number) => (<article key={s.title} className={cn("grid items-center gap-4 border-b border-foreground/15 px-5 py-5 md:grid-cols-[56px_1fr_160px_130px_120px]", s.status === "current" ? "bg-brand/5" : "bg-card")}>
-        <span className={cn("grid size-10 place-items-center font-mono text-sm", s.status === "done" ? "bg-brand text-white" : s.status === "current" ? "bg-highlight text-foreground" : "border border-foreground/25 text-muted-foreground")}>{s.status === "done" ? <Check className="size-4" /> : String(i + 1).padStart(2, "0")}</span>
-        <div><h3 className={cn("font-semibold", s.status === "upcoming" && "text-muted-foreground")}>{s.title}</h3><p className="mt-1 text-xs text-muted-foreground">{s.dimension}</p></div>
-        <span className="text-xs text-muted-foreground">{s.weeks}</span>
-        <span className={cn("w-fit px-2 py-1 font-mono text-[10px] uppercase tracking-widest", s.status === "done" ? "bg-brand/10 text-brand" : s.status === "current" ? "bg-highlight/30 text-foreground" : "bg-muted text-muted-foreground")}>{s.status === "done" ? "Completed" : s.status === "current" ? "In progress" : "Upcoming"}</span>
-        {s.status === "current" ? <Button size="sm" className={violetButton}>Continue</Button> : s.status === "upcoming" ? <Button size="sm" variant="outline" className={outlineButton}>Preview</Button> : <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 className="size-4" /> Done</span>}
-      </article>))}</div></section>
-    <section className="mt-12 border border-brand/30 bg-brand/5 p-6"><div className="flex items-center gap-3"><Sparkles className="text-brand" /><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Echo's recommendation</p><h2 className="mt-1 text-2xl font-semibold">Product Thinking is your biggest lever.</h2></div></div><p className="mt-5 max-w-2xl text-sm leading-6 text-muted-foreground">Your roadmap is weighted toward connecting technical depth with customer impact. Completing the current step unlocks the product-sense mock interview — the single highest-impact milestone left.</p></section>
+
+    {loading && <section className={cn(panel,"mt-12 p-8 text-center text-muted-foreground")}>Loading your roadmap…</section>}
+    {!loading && total === 0 && <section className={cn(panel,"mt-12 p-8 text-center")}><p className="text-muted-foreground">Your roadmap is created from your interview results. Complete a mock interview to generate it.</p><Link to="/setup"><Button className={cn(violetButton,"mt-4")}>Start an interview</Button></Link></section>}
+
+    {!loading && total > 0 && <>
+      <section className="mt-12 grid gap-px bg-foreground/10 md:grid-cols-3">
+        <div className="bg-brand p-7 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Overall progress</p><p className="mt-5 text-8xl font-semibold tracking-tight">{done}<span className="text-4xl text-white/60">/{total}</span></p><p className="mt-2 text-sm">{done === total ? "Every step complete" : `${total - done} step${total - done > 1 ? "s" : ""} left`}</p></div>
+        <div className="bg-card p-7"><div className="flex items-center gap-3"><Clock3 className="size-4 text-brand" /><h2 className="font-semibold">Current focus</h2></div>
+          {current ? <><p className="mt-5 text-2xl font-semibold leading-8">{current.title}</p><p className="mt-3 text-sm text-muted-foreground">{[current.weeks, current.dimension].filter(Boolean).join(" · ")}</p></> : <p className="mt-5 text-sm text-muted-foreground">No step is in progress right now.</p>}
+        </div>
+        <div className="bg-card p-7"><div className="flex items-center gap-3"><Target className="size-4 text-brand" /><h2 className="font-semibold">Completion</h2></div><p className="mt-5 text-2xl font-semibold">{Math.round((done / total) * 100)}% done</p><p className="mt-3 text-sm text-muted-foreground">{done} of {total} steps completed.</p><div className="mt-5 h-2 bg-muted"><div className="h-full bg-highlight" style={{ width: `${(done / total) * 100}%` }} /></div></div>
+      </section>
+
+      <section className="mt-12"><div className="flex items-end justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Milestone timeline</p><h2 className="mt-2 text-3xl font-semibold">Step by step</h2></div><p className="text-xs text-muted-foreground">{done} completed · {inProgress} in progress · {upcoming} upcoming</p></div>
+        <div className="mt-6 border-t border-foreground/20">{steps.map((s: any, i: number) => (<article key={s.id ?? s.title} className={cn("grid items-center gap-4 border-b border-foreground/15 px-5 py-5 md:grid-cols-[56px_1fr_160px_130px_120px]", s.status === "current" ? "bg-brand/5" : "bg-card")}>
+          <span className={cn("grid size-10 place-items-center font-mono text-sm", s.status === "done" ? "bg-brand text-white" : s.status === "current" ? "bg-highlight text-foreground" : "border border-foreground/25 text-muted-foreground")}>{s.status === "done" ? <Check className="size-4" /> : String(i + 1).padStart(2, "0")}</span>
+          <div><h3 className={cn("font-semibold", s.status === "upcoming" && "text-muted-foreground")}>{s.title}</h3><p className="mt-1 text-xs text-muted-foreground">{s.dimension}</p></div>
+          <span className="text-xs text-muted-foreground">{s.weeks ?? ""}</span>
+          <span className={cn("w-fit px-2 py-1 font-mono text-[10px] uppercase tracking-widest", s.status === "done" ? "bg-brand/10 text-brand" : s.status === "current" ? "bg-highlight/30 text-foreground" : "bg-muted text-muted-foreground")}>{s.status === "done" ? "Completed" : s.status === "current" ? "In progress" : "Upcoming"}</span>
+          {s.status === "done"
+            ? <span className="flex items-center gap-1 text-xs text-success"><CheckCircle2 className="size-4" /> Done</span>
+            : <Button size="sm" onClick={() => void complete(s)} className={s.status === "current" ? violetButton : cn(outlineButton)} variant={s.status === "current" ? "default" : "outline"}>Mark done</Button>}
+        </article>))}</div></section>
+    </>}
   </div><EchoAssistant hint="Ask Echo why these steps were chosen." /></main>;
 }
