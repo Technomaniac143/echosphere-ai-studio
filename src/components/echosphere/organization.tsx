@@ -24,7 +24,7 @@ function OrgHeader() {
   </header>;
 }
 
-function Field({ label, value, onChange, error, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; error?: string; placeholder?: string; type?: string }) {
+function Field({ label, value, onChange, error, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; error?: string | undefined; placeholder?: string; type?: string }) {
   return <label className="block">
     <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
     <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
