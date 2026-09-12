@@ -1,1570 +1,669 @@
-# EchoSphere AI Studio
+# EchoSphere
 
-REDESIGN THE EXISTING ECHOSPHERE PRODUCT
+## AI Interview Operating Environment
 
-You are redesigning an existing AI-assisted interview platform called EchoSphere.
+> **Tagline:** *Where Every Answer Shapes the Next Question*
+> **Core Architecture:** Voice-First Intelligent Interview System with Dynamic Multi-Persona Orchestration
 
-The attached screenshots are the SOURCE OF TRUTH for the existing product's information architecture, workflow, content, and functionality.
+---
 
-IMPORTANT:
+## 1. System Overview
 
-Do NOT simplify the product by removing screens, information, data, workflow stages, controls, or assessment concepts.
+EchoSphere is an adaptive AI interview platform where specialized interviewer personas coordinate throughout a single interview session.
 
-Do NOT redesign this as a generic SaaS dashboard.
+Voice is the primary interaction layer. An ambient AI assistant provides:
 
-Do NOT create a generic chatbot product.
+* Interface navigation
+* Contextual workspace control
+* Interview assistance
+* Real-time evidence capture
+* Adaptive persona orchestration
 
-Do NOT copy the screenshots pixel-for-pixel.
+The system continuously transforms candidate responses into interview context, selects the appropriate interviewer persona, generates the next question, and captures evidence for assessment.
 
-Instead:
+---
 
-Preserve the complete product functionality and information architecture from the existing UI, while transforming the visual and interaction design into a premium, voice-first, AI-native interview experience.
+## 2. Runtime State Flow
 
-The new design should feel like:
+```mermaid
+stateDiagram-v2
+    [*] --> ContextSynthesis: Candidate Voice Input
 
-"An intelligent AI interview operating environment"
+    ContextSynthesis --> PersonaRouter: Update Context
 
-rather than:
+    state PersonaRouter {
+        [*] --> EvaluateDomain
 
-"Zoom + dashboard + forms."
+        EvaluateDomain --> Alex_Tech: Systems / Scalability / Depth
+        EvaluateDomain --> Maya_Product: Tradeoffs / User Empathy
+        EvaluateDomain --> Daniel_Hiring: Leadership / Ownership
+        EvaluateDomain --> Sophia_Behavioral: Situations / Conflict
+        EvaluateDomain --> Jordan_Roleplay: Ambiguity / Stakeholders
+    }
 
-==================================================
+    Alex_Tech --> QuestionGeneration: Context Tokens
+    Maya_Product --> QuestionGeneration: Context Tokens
+    Daniel_Hiring --> QuestionGeneration: Context Tokens
+    Sophia_Behavioral --> QuestionGeneration: Context Tokens
+    Jordan_Roleplay --> QuestionGeneration: Context Tokens
 
-PRODUCT
+    QuestionGeneration --> ActiveVoiceSession: Generate + Stream Audio
 
-==================================================
+    ActiveVoiceSession --> ContextSynthesis: Candidate Audio
+    ActiveVoiceSession --> EvidenceLedger: Diagnostic Artifacts
 
-Name:
+    EvidenceLedger --> FinalReport: Session Completed
 
-EchoSphere
+    FinalReport --> [*]
+```
 
-Tagline:
+### Runtime loop
 
-Where Every Answer Shapes the Next Question
+```text
+Candidate Answer
+       ↓
+Context Synthesis
+       ↓
+Persona Routing
+       ↓
+Question Generation
+       ↓
+AI Voice Response
+       ↓
+Evidence Capture
+       ↓
+Candidate Answer
+       ↺
+```
 
-Core concept:
+The loop continues until the interview session is complete.
 
-EchoSphere conducts adaptive AI interviews where multiple AI interviewer personas coordinate throughout a single interview.
+---
 
-Example personas:
+# 3. Complete Product Architecture
 
-Alex — Technical Interviewer
+The complete experience is divided into three major stages.
 
-Maya — Product Manager
+```mermaid
+flowchart TD
+    subgraph Intake["Stage 1 — Pre-Flight & Intake"]
+        A[Candidate Portal]
+        B[5-Step Interview Setup]
+        C[Candidate Dossier]
+        D[Hardware & Network Diagnostics]
+        E[Acoustic Calibration]
+        F[Readiness Verification]
 
-Daniel — Hiring Manager
+        A --> B
+        B --> C
+        C --> D
+        D --> E
+        E --> F
+    end
 
-Sophia — Behavioral Interviewer
+    subgraph Runtime["Stage 2 — Live Interview Environment"]
+        G[Live Interview Workspace]
+        H[Central AI Persona]
+        I[Floating Candidate PiP]
+        J[Echo Voice Controller]
+        K[Context Drawer]
 
-Jordan — Customer / Role-play
+        G <--> H
+        G <--> I
+        G <--> J
+        G <--> K
+    end
 
-Only one persona should be actively speaking at any given moment.
+    subgraph Evaluation["Stage 3 — Evidence & Assessment"]
+        L[Evidence-Backed Report]
+        M[Panel Disagreement Matrix]
+        N[Competency Roadmap]
 
-The active persona changes dynamically during the interview.
+        L --> M
+        L --> N
+    end
 
-The interview should feel continuous even when the persona changes.
+    F --> G
+    G --> L
+    N --> B
+```
 
-==================================================
+---
 
-DESIGN GOAL
+# 4. Candidate Setup Pipeline
 
-==================================================
+The setup process remains a mandatory five-step configuration flow.
 
-Keep the existing product capabilities but introduce a new interaction model centered around:
+```mermaid
+flowchart LR
+    S1["01<br/>Company"]
+    S2["02<br/>Role"]
+    S3["03<br/>Domain Focus"]
+    S4["04<br/>AI Panel Plan"]
+    S5["05<br/>Confirm"]
 
-1. Real-time AI interviewer
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+```
 
-2. Voice-first interaction
+## Step 1 — Company
 
-3. Ambient AI assistant
+The candidate selects the target company.
 
-4. Context-aware workspace
+## Step 2 — Role
 
-5. Adaptive persona handoff
+The candidate selects the target role.
 
-6. AI-controlled interface actions
+## Step 3 — Domain Focus
 
-7. Live transcript
+The candidate selects the relevant domain and competency focus.
 
-8. Whiteboard/context workspace
+## Step 4 — AI Panel Plan
 
-9. Evidence-backed assessment
+EchoSphere dynamically proposes:
 
-10. Clean cinematic presentation
+* Competency weighting
+* Interviewer personas
+* Focus areas
+* Difficulty
+* Interview mode
 
-The AI assistant should function like a miniature voice operating system for EchoSphere.
+## Step 5 — Confirm
 
-The user can say:
+The candidate reviews the generated configuration before proceeding.
 
-"Hey Echo, open the whiteboard."
+---
 
-"Hey Echo, repeat the question."
+# 5. Environment Verification Gate
 
-"Hey Echo, show the transcript."
+Before entering the live interview, EchoSphere performs a readiness check.
 
-"Hey Echo, open my notes."
+```mermaid
+flowchart TD
+    A["Camera + Microphone Handshake"]
+    B["Network Diagnostics"]
+    C["15s Acoustic Test"]
+    D{"Automated Evaluation"}
 
-"Hey Echo, go back to the previous question."
+    A --> B
+    B --> C
+    C --> D
 
-"Hey Echo, pause the interview."
+    D -->|PASS| E["READY"]
+    D -->|FAIL| F["ACTION REQUIRED"]
 
-The assistant should be able to control relevant UI surfaces.
+    F --> A
+```
 
-The voice assistant is NOT just a chat window.
+### Verification areas
 
-Voice is the primary interaction layer.
+| Check         | Purpose                               |
+| ------------- | ------------------------------------- |
+| Camera        | Access and video quality              |
+| Microphone    | Access and input level                |
+| Screen Share  | Sharing capability                    |
+| Network       | Backend reachability and latency      |
+| Acoustic Test | Voice quality and recording integrity |
 
-Buttons and menus remain available as secondary controls.
+---
 
-==================================================
+# 6. Live Interview Environment
 
-VISUAL DIRECTION
+The live room is the central experience of EchoSphere.
 
-==================================================
+```mermaid
+flowchart TB
+    State["Interview State + Persona Timeline"]
 
-Create a cohesive EchoSphere design system.
+    State --> AI["Central AI Persona Surface"]
 
-The current product is mostly white with blue/purple accents and the report uses dark mode.
+    AI --> Question["Current Interview Question"]
 
-Unify the product into a coherent premium system.
+    Candidate["Floating Candidate PiP"] --> AI
 
-Primary visual language:
+    Echo["Echo Ambient Voice Controller"] --> AI
 
-- dark charcoal / graphite foundation for immersive experiences
+    AI <--> Workspace["Contextual Workspace"]
 
-- soft neutral surfaces
+    Workspace --> Conversation
+    Workspace --> Transcript
+    Workspace --> Notes
+    Workspace --> Whiteboard
+    Workspace --> Summary
 
-- electric violet / indigo accents
+    Controls["Mic / Camera / Screen Share / End"] --> AI
 
-- subtle cyan / green status colors
+    Status["Connection / Recording / AI State / Timer"] --> AI
+```
 
-- restrained gradients
+### Primary visual hierarchy
 
-- glass-like surfaces
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Persona Timeline                              Live Status   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│                                                             │
+│                  AI INTERVIEWER                             │
+│                                                             │
+│                    Alex                                     │
+│              Technical Interviewer                          │
+│                                                             │
+│                                                             │
+│          Current interview question                         │
+│                                                             │
+│                                     ┌───────────────────┐   │
+│                                     │ Candidate PiP     │   │
+│                                     └───────────────────┘   │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                 Echo Voice Controller                       │
+│                     Hey Echo                                │
+├─────────────────────────────────────────────────────────────┤
+│ Mic     Camera     Screen Share                  End        │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- soft blur
+The contextual workspace should remain hidden or minimized until needed.
 
-- low-contrast borders
+---
 
-- rounded corners
+# 7. Persona Orchestration
 
-- elegant shadows
+Only one AI persona should actively speak at a time.
 
-- cinematic ambient lighting
+```mermaid
+flowchart LR
+    Context["Interview Context"]
 
-Do not use excessive neon.
+    Context --> Router{"Persona Router"}
 
-Do not make the interface cyberpunk.
+    Router --> Alex["Alex<br/>Technical"]
+    Router --> Maya["Maya<br/>Product"]
+    Router --> Daniel["Daniel<br/>Hiring"]
+    Router --> Sophia["Sophia<br/>Behavioral"]
+    Router --> Jordan["Jordan<br/>Role-play"]
 
-Do not overuse giant gradient text.
+    Alex --> Next["Next Question"]
+    Maya --> Next
+    Daniel --> Next
+    Sophia --> Next
+    Jordan --> Next
+```
 
-Do not turn every section into a floating card.
+### Persona transition
 
-Prefer large intentional surfaces and clear hierarchy.
+A persona handoff should feel like a continuous conversation.
 
-Typography:
-
-modern premium sans-serif similar to Inter, Geist, Manrope, or Plus Jakarta Sans.
-
-==================================================
-
-GLOBAL NAVIGATION
-
-==================================================
-
-Keep navigation extremely minimal.
-
-Candidate experience should emphasize:
-
-EchoSphere logo
-
-current state
-
-AI status
-
-profile
-
-contextual navigation
-
-Organization experience can expose more analytical navigation.
-
-Do not use a traditional dense enterprise sidebar everywhere.
-
-==================================================
-
-SCREEN 1 — LANDING PAGE
-
-==================================================
-
-Preserve the existing messaging:
-
-"Where Every Answer Shapes the Next Question"
-
-Explain that EchoSphere provides:
-
-AI-powered adaptive voice interviews
-
-coordinated AI panel
-
-adaptive questioning
-
-evidence-backed feedback
-
-Show two primary paths:
-
-Candidate
-
-Organization
-
-Show the AI panel personas:
-
-Alex — Technical Interviewer
-
-Maya — Product Manager
-
-Daniel — Hiring Manager
-
-Sophia — Behavioral Interviewer
-
-Jordan — Customer / Role-play
-
-Visual treatment:
-
-Replace the static marketing treatment with a more immersive AI presence.
-
-Show subtle AI voice/waveform activity.
-
-Introduce the EchoSphere assistant concept without overwhelming the landing page.
-
-Primary CTA:
-
-"Are you a Candidate?"
-
-Secondary:
-
-"Are you an Organization?"
-
-==================================================
-
-SCREEN 2 — CANDIDATE PORTAL
-
-==================================================
-
-Preserve existing content:
-
-Candidate Portal
-
-Practice AI voice interviews
-
-Work or Personal Email
-
-Continue to Candidate Dashboard
-
-Quick Launch:
-
-Enter Demo Candidate Workspace
-
-Assessment:
-
-Enter Access Code
-
-Security messaging:
-
-End-to-End Voice & Identity Encryption
-
-Make the login experience more premium.
-
-Introduce a subtle ambient EchoSphere AI presence.
-
-The page should feel like entering an intelligent interview system rather than a standard login form.
-
-==================================================
-
-SCREEN 3 — CANDIDATE DASHBOARD
-
-==================================================
-
-Preserve all existing content.
-
-Top area:
-
-Welcome back
-
-candidate name
-
-email
-
-Actions:
-
-Start New Mock Interview
-
-View Profile
-
-Reports
-
-Roadmap
-
-Status cards:
-
-Upcoming
-
-Completed
-
-Average Score
-
-Profile
-
-Profile Completion
-
-Competency Overview
-
-Roadmap Progress
-
-Competencies currently represented include:
-
-Technical
-
-Problem Solving
-
-Communication
-
-Product Thinking
-
-Leadership
-
-Behavioral
-
-Adaptability
-
-Interview/session list must remain.
-
-Session states include:
-
-Completed
-
-In Progress
-
-Scheduled
-
-Completed sessions display:
-
-company
-
-role
-
-date
-
-overall score
-
-View Report
-
-In-progress sessions display:
-
-Resume
-
-Scheduled sessions display:
-
-Details
-
-Redesign these as highly readable timeline/session surfaces.
-
-Add a persistent EchoSphere voice assistant affordance.
-
-Example:
-
-[ AI ORB ]
-
-"Hey Echo"
-
-The assistant may answer:
-
-"What would you like to work on?"
-
-Possible quick actions:
-
-Start interview
-
-Review last report
-
-Practice weak competency
-
-Open roadmap
-
-==================================================
-
-SCREEN 4 — MOCK INTERVIEW SETUP
-
-==================================================
-
-This is a 5-step setup flow.
-
-Do NOT remove any step.
-
-STEP 1:
-
-Target Company
-
-Current content includes companies such as:
-
-Google
-
-Microsoft
-
-Amazon
-
-Apple
-
-Meta
-
-Netflix
-
-Uber
-
-Use searchable/selectable company input.
-
-STEP 2:
-
-Target Role
-
-Examples:
-
-Software Engineer
-
-Senior Software Engineer
-
-Staff Software Engineer
-
-Frontend Engineer
-
-Backend Engineer
-
-Full Stack Engineer
-
-Data Engineer
-
-STEP 3:
-
-Domain & Competency Focus
-
-Example:
-
-Data Engineering
-
-The user selects the course/domain.
-
-STEP 4:
-
-Dynamic AI Proposal
-
-Preserve:
-
-Competency weighting breakdown
-
-Example:
-
-35% Technical
-
-30% System Design
-
-20% Problem Solving
-
-10% Behavioral
-
-5% Communication
-
-Also preserve:
-
-Inferred Interview Panel
-
-Technical Interviewer
-
-Domain Expert
-
-Hiring Manager
-
-Course Focus Areas
-
-Examples:
-
-Spark/Kafka Streaming
-
-Data Warehousing
-
-ETL Pipelines
-
-Data Quality & Schema Design
-
-Target Difficulty:
-
-Easy
-
-Medium
-
-Hard
-
-Expert
-
-STEP 5:
-
-Confirm Mock Interview Setup
-
-Show summary:
-
-Company
-
-Role
-
-Domain
-
-Difficulty
-
-Interview Mode
-
-Example:
-
-Assessment / Mock Interview
-
-Primary action:
-
-Proceed to Candidate Information
-
-Redesign this entire setup as a guided AI-assisted configuration experience.
-
-Instead of feeling like five disconnected forms, make it feel like EchoSphere is helping configure the interview.
-
-At appropriate points the AI can say:
-
-"I've inferred a three-person panel based on the role."
-
-"Your interview will emphasize system design and technical depth."
-
-==================================================
-
-SCREEN 5 — CANDIDATE INFORMATION PORTAL
-
-==================================================
-
-Preserve all required candidate information.
-
-Header:
-
-Personal Information Portal
-
-Purpose:
-
-Provide resume, project repository, education and certifications to personalize the AI mock interviewer.
-
-Section A:
-
-Candidate Resume
-
-Upload:
-
-PDF
-
-DOC
-
-DOCX
-
-Maximum:
-
-10MB
-
-Section B:
-
-Best Project GitHub Link
-
-Repository URL
-
-Explain that the interviewer will evaluate code structure and architecture from this project.
-
-Section C:
-
-Educational Details
-
-Institution / College / University
-
-Degree
-
-Department / Branch
-
-Graduation Year
-
-Section D:
-
-Certifications
-
-Certification Name
-
-Issuing Organization
-
-Year / Issue Date
-
-Credential URL
-
-Allow Add.
-
-Primary action:
-
-Save & Continue to System Check
-
-Validation errors should be clear and non-intrusive.
-
-Redesign the form so it feels like an AI profile-building process rather than a conventional long form.
-
-Optionally show:
-
-"EchoSphere is building your interview context..."
-
-with a subtle progress indicator.
-
-==================================================
-
-SCREEN 6 — SYSTEM ENVIRONMENT CHECK
-
-==================================================
-
-Preserve exactly these four checks:
-
-1. Camera Access & Video Preview
-
-2. Microphone Access & Input Level
-
-3. Screen Sharing Verification
-
-4. Real Network & Backend Health
-
-Every check has a status:
-
-PASS
-
-NOT ACTIVE
-
-FAIL
-
-CHECKING
-
-Camera panel contains live video preview.
-
-Microphone panel contains live input meter.
-
-Screen sharing panel contains:
-
-Screen Sharing Not Started
-
-Share Screen Now
-
-Network panel contains:
-
-Backend Reachable
-
-Latency
-
-Re-check Connectivity
-
-The UI must make readiness immediately understandable.
-
-Create an overall environment status:
-
-READY
-
-or
-
-ACTION REQUIRED
-
-Do not hide technical readiness information.
-
-Make this feel like a "pre-flight check" before entering the AI interview.
-
-==================================================
-
-SCREEN 7 — SAMPLE VIDEO TEST
-
-==================================================
-
-Preserve:
-
-Sample Video Question
-
-Example:
-
-"What is your favourite colour?"
-
-Instruction:
-
-Answer naturally for 10–30 seconds.
-
-Speak clearly in your normal tone.
-
-Live Camera Recorder
-
-Timer:
-
-0s / 30s
-
-Large candidate video preview.
-
-Controls:
-
-Start Recording
-
-Submit for AI Analysis
-
-Show recording state visually.
-
-When recording is active:
-
-animate waveform
-
-timer advances
-
-record indicator is obvious
-
-When complete:
-
-show review state
-
-duration
-
-submit state
-
-==================================================
-
-SCREEN 8 — CANDIDATE ANALYSIS PORTAL
-
-==================================================
-
-Preserve:
-
-Candidate Analysis Portal
-
-Automated Evaluation
-
-Environment, media integrity, and sample recording evaluation result.
-
-Overall status:
-
-APPROVED
-
-Ready for Interview
-
-Verification sections:
-
-Camera & Video Quality
-
-Microphone & Audio Level
-
-Screen Sharing Verification
-
-Sample Recording Integrity
-
-Each section has:
-
-PASS / FAIL
-
-summary
-
-evidence/status
-
-Primary CTA:
-
-Start Mock Interview
-
-This screen should feel like the final gateway before entering the live AI environment.
-
-==================================================
-
-SCREEN 9 — LIVE INTERVIEW ROOM
-
-==================================================
-
-THIS IS THE MOST IMPORTANT SCREEN.
-
-Transform the current interview UI dramatically.
-
-The existing implementation has:
-
-candidate information sidebar
-
-large AI interviewer video
-
-candidate picture-in-picture
-
-conversation/transcript
-
-notes
-
-interview summary
-
-persona progress
-
-microphone/camera/end controls
-
-Preserve these capabilities.
-
-But redesign the experience around an immersive AI interview room.
-
---------------------------------------------------
-
-LAYOUT
-
---------------------------------------------------
-
-Use a large central AI interviewer area.
-
-AI interviewer video/avatar should dominate.
-
-Candidate video should appear as a smaller floating picture-in-picture panel.
-
-The active interviewer should have:
-
-persona name
-
-role
-
-LIVE indicator
-
-Example:
-
-● EchoSphere AI
-
+```text
 Alex
-
 Technical Interviewer
 
---------------------------------------------------
-
-TOP INTERVIEW STATE
-
---------------------------------------------------
-
-Display:
-
-Verify ✓
-
-Technical
-
-Product
-
-Behavioral
-
-Confirm
-
-The current persona is highlighted.
-
-Past stages are subdued.
-
-Future stages remain muted.
-
-When switching personas:
-
-animate the transition subtly.
-
-Example:
-
-Alex
-
-Technical Interviewer
-
-hands off to
+        ↓
+   Context Handoff
+        ↓
 
 Maya
-
 Product Manager
+```
 
-Only one active speaker.
+Avoid hard screen transitions or abrupt persona changes.
 
---------------------------------------------------
+---
 
-VOICE INTERFACE
+# 8. Echo Voice Interaction
 
---------------------------------------------------
+Echo is an ambient voice controller rather than a conventional chatbot.
 
-Create a persistent voice assistant at the lower center of the interview UI.
+## State machine
 
-Three states:
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
 
-IDLE
+    Idle --> Listening: "Hey Echo"
+    Listening --> Thinking: Intent Captured
+    Thinking --> Speaking: Action / Response Ready
+    Speaking --> Idle: Complete
 
-Small glowing orb.
+    Listening --> Idle: Cancel
+    Thinking --> Idle: Cancel
+```
 
-Text:
+## Voice states
 
-"Hey Echo"
+| State     | UI                                     |
+| --------- | -------------------------------------- |
+| Idle      | Small Echo Orb + "Hey Echo"            |
+| Listening | Animated waveform + "Listening..."     |
+| Thinking  | Pulsing orb + "Thinking..."            |
+| Speaking  | AI waveform + "EchoSphere is speaking" |
 
-LISTENING
+---
 
-Animated waveform.
+# 9. Voice-Controlled Interface
 
-Text:
+Echo can control relevant interface surfaces.
 
-"Listening..."
+```mermaid
+sequenceDiagram
+    autonumber
 
-THINKING
+    actor C as Candidate
+    participant E as Echo Voice Runtime
+    participant O as Orchestration Layer
+    participant W as Context Workspace
 
-Pulsing orb.
+    C->>E: "Hey Echo, open the whiteboard."
+    E->>E: Detect wake word
+    E->>E: Extract intent
 
-Text:
+    E->>O: OPEN_WHITEBOARD
+    O->>W: Expand Whiteboard
+    W-->>C: Whiteboard visible
 
-"Thinking..."
+    C->>E: "Hey Echo, repeat the last constraint."
+    E->>O: REPEAT_QUESTION
+    O->>W: Retrieve active question context
+    E-->>C: Repeat specific constraint
+```
 
-SPEAKING
+### Supported actions
 
-Animated waveform around the AI interviewer.
-
-Text:
-
-"EchoSphere is speaking"
-
-This should feel like a voice assistant, not a chat input.
-
---------------------------------------------------
-
-WAKE WORD
-
---------------------------------------------------
-
-Support a wake phrase:
-
-"Hey Echo"
-
-The assistant is normally ambient.
-
-When the user says:
-
-"Hey Echo"
-
-the assistant expands visually.
-
-Show:
-
-Echo Assistant
-
-Listening...
-
-Suggested voice commands:
-
-Open whiteboard
-
-Repeat question
-
-Show transcript
-
-Open notes
-
-Pause interview
-
---------------------------------------------------
-
-VOICE ACTIONS
-
---------------------------------------------------
-
-The AI can operate the interface.
-
-Examples:
-
-"Open the whiteboard."
-
-→ Whiteboard workspace expands.
-
-"Repeat the question."
-
-→ current question is highlighted and repeated.
-
-"Show my notes."
-
-→ notes workspace opens.
-
-"Show transcript."
-
-→ transcript panel expands.
-
-"Go to the previous question."
-
-→ transcript/question history changes.
-
-"Pause the interview."
-
-→ interview enters paused state.
-
-The AI should be visually represented as controlling the UI.
-
---------------------------------------------------
-
-QUESTION AREA
-
---------------------------------------------------
-
-Current interview question should appear elegantly near the center or lower portion of the AI interview area.
-
-Example:
-
-SYSTEM DESIGN
-
-"How would you design a globally distributed URL shortening service?"
-
-Metadata:
-
-Follow-up
-
-Difficulty
-
-Competency
-
-Do not make it look like an exam question card.
-
-It should feel like part of the conversation.
-
---------------------------------------------------
-
-RIGHT WORKSPACE
-
---------------------------------------------------
-
-Preserve existing Conversation and Notes behavior.
-
-Expand this into a contextual workspace with tabs:
-
-Conversation
-
-Transcript
-
-Notes
-
-Whiteboard
-
-Summary
-
-This panel can slide in/out.
-
-Conversation:
-
-live transcript
-
-Notes:
-
-candidate notes
-
-Whiteboard:
-
-architecture diagrams
-
-claims
-
-open threads
-
-competencies
-
-Summary:
-
-current interview observations
-
-The workspace should not permanently consume a large percentage of the screen.
-
-It should appear contextually.
-
---------------------------------------------------
-
-INTERVIEW CONTROLS
-
---------------------------------------------------
-
-Keep:
-
-Microphone
-
-Camera
-
-End Interview
-
-Potentially include:
-
-Screen Share
-
-More
-
-Use minimal controls.
-
-Microphone is primary.
-
-End Interview is visually distinct.
-
---------------------------------------------------
-
-LIVE STATUS
-
---------------------------------------------------
-
-Show:
-
-connection health
-
-recording status
-
-AI listening/speaking state
-
-interview timer
-
-All of these must remain visible but subtle.
-
-==================================================
-
-SCREEN 10 — INTERVIEW REPORT
-
-==================================================
-
-Preserve all existing report information.
-
-This is an evidence-backed assessment.
-
-Header:
-
-Interview Report
-
-Evidence-backed assessment
-
-Candidate identity:
-
-Arjun Sharma
-
-Role:
-
-Backend Engineer at Amazon
-
-Interview date
-
-Duration
-
---------------------------------------------------
-
-SUMMARY
-
---------------------------------------------------
-
-Overall Score
-
-Confidence
-
-Key Strengths
-
-Areas for Improvement
-
-Preserve examples such as:
-
-Strong debugging ability
-
-Good backend fundamentals
-
-Clear logical communication
-
-Ownership/teamwork examples
-
-Areas for improvement:
-
-advanced technical depth
-
-connecting implementation decisions to user impact
-
-etc.
-
---------------------------------------------------
-
-COMPETENCY PROFILE
-
---------------------------------------------------
-
-Show all assessed competencies.
-
-Current system includes:
-
-Technical
-
-Problem Solving
-
-Communication
-
-Product Thinking
-
-Leadership
-
-Behavioral
-
-Adaptability
-
-Each competency should contain:
-
-score
-
-confidence
-
-strengths
-
-weaknesses / concerns
-
-View Evidence
-
---------------------------------------------------
-
-PANEL SCORES
-
---------------------------------------------------
-
-Show scores for:
-
-Technical Interviewer
-
-Product Manager
-
-Hiring Manager
-
-and other active personas when relevant.
-
-The panel scoring should visually communicate that these are distinct perspectives.
-
---------------------------------------------------
-
-PANEL DISAGREEMENT
-
---------------------------------------------------
-
-Preserve the important concept:
-
-Panel disagreement detected.
-
-Explain that different interviewer personas can evaluate different dimensions differently.
-
-Make this a visually meaningful analytical component.
-
---------------------------------------------------
-
-IMPROVEMENT PLAN
-
---------------------------------------------------
-
-Preserve actionable recommendations.
-
-Example:
-
-Practice system-design tradeoffs.
-
-Quantify project outcomes with metrics.
-
-Connect technical decisions to customer impact.
-
-Practice STAR-format behavioral responses.
-
-Make this look like a personalized roadmap rather than a plain list.
-
---------------------------------------------------
-
-REPORT ACTIONS
-
---------------------------------------------------
-
-Download Report
-
-Back to Dashboard
-
-==================================================
-
-AI ASSISTANT ON NON-INTERVIEW SCREENS
-
-==================================================
-
-Echo should also exist outside the interview room.
-
-On dashboard:
-
-"Hey Echo, what should I practice?"
-
-Possible response:
-
-"You've been weakest in Product Thinking. Want to run a focused 10-minute interview?"
-
-On report:
-
-"Hey Echo, explain this score."
-
-On roadmap:
-
-"Hey Echo, start a practice session for my weakest competency."
-
-On setup:
-
-"Hey Echo, configure this interview for me."
-
-The assistant should therefore feel like a persistent product capability.
-
-==================================================
-
-INTERACTION MODEL
-
-==================================================
-
-Use a command/tool concept.
-
-Possible internal actions include:
-
+```text
 OPEN_PANEL
-
 CLOSE_PANEL
-
 NAVIGATE
 
 OPEN_TRANSCRIPT
-
 OPEN_NOTES
-
 OPEN_WHITEBOARD
 
 REPEAT_QUESTION
-
 SHOW_PREVIOUS_QUESTION
 
 PAUSE_INTERVIEW
-
 RESUME_INTERVIEW
 
 START_INTERVIEW
-
 END_INTERVIEW
 
 SHOW_REPORT
-
 SHOW_ROADMAP
-
 START_PRACTICE
-
-The visual design should make these actions feel intentional and trustworthy.
-
-Example interaction:
-
-User:
-
-"Hey Echo, open the whiteboard."
-
-UI:
-
-Echo Assistant
-
-Opening Whiteboard...
-
-Then:
-
-Whiteboard panel smoothly expands into view.
-
-==================================================
-
-MOTION DESIGN
-
-==================================================
-
-Use subtle, high-quality motion.
-
-Important transitions:
-
-AI persona handoff
-
-AI listening state
-
-AI thinking state
-
-AI speaking state
-
-voice assistant expansion
-
-workspace opening
-
-workspace closing
-
-transcript updates
-
-score updates
-
-recording state
-
-system check state
-
-report loading
-
-Motion should feel:
-
-quiet
-
-precise
-
-responsive
-
-premium
-
-No excessive bouncing.
-
-No cartoon-like animation.
-
-==================================================
-
-RESPONSIVE DESIGN
-
-==================================================
-
-Desktop is primary.
-
-Target:
-
-1280px+
-
-Tablet:
-
-collapse contextual workspace into drawers.
-
-The interview room must preserve:
-
-AI interviewer
-
-candidate video
-
-question
-
-voice control
-
-critical interview status
-
-==================================================
-
-COMPONENT SYSTEM
-
-==================================================
-
-Create a consistent design system containing reusable components such as:
-
-EchoOrb
-
-VoiceWaveform
-
-VoiceAssistant
-
-AIInterviewer
-
-CandidateVideo
-
-PersonaIndicator
-
-PersonaTimeline
-
-InterviewTimer
-
-InterviewStatus
-
-TranscriptPanel
-
-NotesPanel
-
-WhiteboardPanel
-
-ContextPanel
-
-QuestionDisplay
-
-InterviewControls
-
-EnvironmentCheckCard
-
-VerificationStatus
-
-CompetencyScore
-
-EvidenceCard
-
-PanelScore
-
-ImprovementPlan
-
-SessionCard
-
-Roadmap
-
-ProgressBar
-
-ReportSection
-
-==================================================
-
-IMPORTANT DATA PRESERVATION RULE
-
-==================================================
-
-Do not remove information from the attached screenshots.
-
-The redesign may:
-
-- merge visual sections
-
-- reorganize hierarchy
-
-- introduce drawers
-
-- introduce contextual panels
-
-- introduce voice interaction
-
-- improve information density
-
-- replace repetitive cards with better compositions
-
-But it must NOT remove core functionality or assessment information.
-
-Do NOT invent unrelated features.
-
-Do NOT turn the platform into a generic voice assistant.
-
-EchoSphere remains an AI interview platform first.
-
-==================================================
-
-FINAL DESIGN CHARACTER
-
-==================================================
-
-The finished product should feel like:
-
-an AI interview room
-
-inside an intelligent operating environment.
-
-It should communicate:
-
-"EchoSphere is listening."
-
-"EchoSphere understands my interview context."
-
-"EchoSphere adapts to my answers."
-
-"EchoSphere can help me navigate the interview."
-
-"Every answer changes what happens next."
-
-The interface should be sophisticated enough for a serious recruiting product while still feeling distinctly AI-native.
-
-Generate the complete EchoSphere experience as a cohesive multi-screen product, using all attached screenshots as the functional source of truth.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/5a51a303-4ad4-4c2c-afeb-5c0427dd60e5).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
 ```
+
+---
+
+# 10. Contextual Workspace
+
+The workspace provides secondary interview context without permanently dominating the screen.
+
+```mermaid
+flowchart TD
+    Workspace["Context Workspace"]
+
+    Workspace --> Conversation["Conversation"]
+    Workspace --> Transcript["Transcript"]
+    Workspace --> Notes["Notes"]
+    Workspace --> Whiteboard["Whiteboard"]
+    Workspace --> Summary["Summary"]
+```
+
+### Conversation
+
+Live conversational context.
+
+### Transcript
+
+Full interview transcript.
+
+### Notes
+
+Candidate-created notes.
+
+### Whiteboard
+
+Supports:
+
+* Architecture diagrams
+* Claims
+* Open threads
+* Competencies
+
+### Summary
+
+Current interview observations.
+
+---
+
+# 11. Evidence Capture
+
+EchoSphere continuously captures diagnostic artifacts throughout the session.
+
+```mermaid
+flowchart TD
+    subgraph Evidence["Captured Session Evidence"]
+        E1["Prosody / Cadence / Pitch"]
+        E2["Diarized Speech Transcript"]
+        E3["Whiteboard Architecture"]
+        E4["Interview Responses"]
+        E5["Interaction Context"]
+    end
+
+    Evidence --> Engine["Echo Inference Engine"]
+
+    Engine --> Scores["Persona Evaluation"]
+
+    Scores --> Alex["Alex<br/>88 / 100"]
+    Scores --> Maya["Maya<br/>61 / 100"]
+    Scores --> Daniel["Daniel<br/>79 / 100"]
+
+    Alex --> Analysis["Cross-Persona Analysis"]
+    Maya --> Analysis
+    Daniel --> Analysis
+```
+
+---
+
+# 12. Cross-Persona Assessment
+
+Different personas evaluate different dimensions.
+
+```mermaid
+flowchart TD
+    Alex["Alex<br/>88 / 100<br/>Strong Scalability Logic"]
+    Maya["Maya<br/>61 / 100<br/>User Edge Cases Missed"]
+    Daniel["Daniel<br/>79 / 100<br/>Direct Communication"]
+
+    Alex --> Delta{"Discrepancy Analysis"}
+    Maya --> Delta
+    Daniel --> Delta
+
+    Delta -->|Delta > 20%| Disagreement["Panel Disagreement"]
+    Delta -->|Delta <= 20%| Consensus["Unified Evaluation"]
+
+    Disagreement --> Report["Comprehensive Interview Report"]
+    Consensus --> Report
+```
+
+### Example evaluation
+
+| Persona | Score | Primary observation        |
+| ------- | ----: | -------------------------- |
+| Alex    |    88 | Strong scalability logic   |
+| Maya    |    61 | Overlooked user edge cases |
+| Daniel  |    79 | Direct communication       |
+
+The discrepancy between these perspectives becomes useful assessment evidence rather than being averaged away.
+
+---
+
+# 13. Assessment Pipeline
+
+```mermaid
+flowchart LR
+    Evidence["Session Evidence"]
+    Evidence --> Inference["AI Inference"]
+
+    Inference --> Competencies["Competency Scores"]
+    Inference --> PersonaScores["Persona Scores"]
+    Inference --> Confidence["Confidence"]
+
+    PersonaScores --> Disagreement["Panel Disagreement"]
+    Competencies --> Report["Evidence-Backed Report"]
+    Confidence --> Report
+    Disagreement --> Report
+
+    Report --> Roadmap["Targeted Improvement Roadmap"]
+```
+
+---
+
+# 14. End-to-End System
+
+```mermaid
+flowchart TD
+    Start([Candidate Starts])
+
+    Start --> Intake["Candidate Intake"]
+    Intake --> Setup["Interview Configuration"]
+    Setup --> Dossier["Candidate Dossier"]
+    Dossier --> Diagnostics["Environment Diagnostics"]
+    Diagnostics --> Calibration["Voice Calibration"]
+    Calibration --> Gate{"Ready?"}
+
+    Gate -->|No| Fix["Resolve Issues"]
+    Fix --> Diagnostics
+
+    Gate -->|Yes| Room["Live Interview Room"]
+
+    Room --> Voice["Candidate Voice"]
+    Voice --> Context["Context Synthesis"]
+
+    Context --> Router["Persona Router"]
+    Router --> Persona["Active AI Persona"]
+    Persona --> Question["Adaptive Question"]
+
+    Question --> Voice
+
+    Room --> Evidence["Evidence Ledger"]
+    Voice --> Evidence
+    Room --> Workspace["Context Workspace"]
+
+    Evidence --> Inference["Inference Engine"]
+    Inference --> Assessment["Assessment"]
+
+    Assessment --> Report["Interview Report"]
+    Report --> Roadmap["Improvement Roadmap"]
+
+    Roadmap --> Setup
+
+    Report --> End([Session Complete])
+```
+
+---
+
+# 15. Architecture Principles
+
+## Voice First
+
+Voice is the primary interaction method.
+
+Traditional controls remain available but secondary.
+
+## Context First
+
+Every question should be informed by:
+
+* Candidate context
+* Previous answers
+* Competency state
+* Persona perspective
+* Interview progress
+
+## Persona Specialization
+
+Each interviewer persona should have a clear evaluation responsibility.
+
+## Evidence First
+
+Scores should be backed by observable interview evidence.
+
+## Contextual UI
+
+The interface should reveal tools when needed instead of permanently exposing every surface.
+
+## Continuous Experience
+
+Moving between personas, questions, workspaces, and assessment states should feel like moving through one intelligent environment.
+
+---
+
+# 16. Design North Star
+
+> ## EchoSphere should feel like one continuous intelligent interview.
+
+The candidate should always feel that:
+
+**EchoSphere is listening.**
+
+**EchoSphere understands the interview context.**
+
+**EchoSphere adapts to the candidate's answers.**
+
+**EchoSphere can navigate the environment.**
+
+**Every answer changes what happens next.**
+
+---
+
+## Final System Model
+
+```mermaid
+mindmap
+    root((EchoSphere))
+        Voice
+            Wake Word
+            Listening
+            Thinking
+            Speaking
+            Voice Commands
+        Intelligence
+            Context Synthesis
+            Persona Router
+            Question Generation
+            Evidence Inference
+        Personas
+            Alex
+            Maya
+            Daniel
+            Sophia
+            Jordan
+        Workspace
+            Conversation
+            Transcript
+            Notes
+            Whiteboard
+            Summary
+        Evidence
+            Voice
+            Transcript
+            Whiteboard
+            Responses
+        Assessment
+            Competencies
+            Persona Scores
+            Confidence
+            Disagreement
+        Outcomes
+            Report
+            Improvement Plan
+            Roadmap
+```
+
+> **EchoSphere is not a dashboard with an AI assistant attached.**
+>
+> **It is an AI interview environment in which the assistant, interviewers, evidence, workspace, and assessment operate as one system.**
