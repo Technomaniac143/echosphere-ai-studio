@@ -16,16 +16,21 @@ export type Database = {
     Tables: {
       candidate_profiles: {
         Row: {
+          best_project_url: string | null
           certifications: Json | null
           created_at: string
           degree: string | null
           department: string | null
           email: string | null
+          experience: string | null
           full_name: string | null
+          github_analysis: Json | null
           github_url: string | null
           graduation_year: number | null
           id: string
           institution: string | null
+          linkedin_url: string | null
+          phone: string | null
           photo_path: string | null
           profile_completion: number | null
           resume_path: string | null
@@ -33,16 +38,21 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          best_project_url?: string | null
           certifications?: Json | null
           created_at?: string
           degree?: string | null
           department?: string | null
           email?: string | null
+          experience?: string | null
           full_name?: string | null
+          github_analysis?: Json | null
           github_url?: string | null
           graduation_year?: number | null
           id?: string
           institution?: string | null
+          linkedin_url?: string | null
+          phone?: string | null
           photo_path?: string | null
           profile_completion?: number | null
           resume_path?: string | null
@@ -50,16 +60,21 @@ export type Database = {
           user_id: string
         }
         Update: {
+          best_project_url?: string | null
           certifications?: Json | null
           created_at?: string
           degree?: string | null
           department?: string | null
           email?: string | null
+          experience?: string | null
           full_name?: string | null
+          github_analysis?: Json | null
           github_url?: string | null
           graduation_year?: number | null
           id?: string
           institution?: string | null
+          linkedin_url?: string | null
+          phone?: string | null
           photo_path?: string | null
           profile_completion?: number | null
           resume_path?: string | null
@@ -101,63 +116,249 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_patterns: {
+        Row: {
+          content: string | null
+          created_at: string
+          file_path: string | null
+          id: string
+          organization_id: string
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          organization_id: string
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          organization_id?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_patterns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_threads: {
         Row: {
+          behavioral_score: number | null
+          camera_status: string
+          cheating_violation: boolean
           company: string
           competency_scores: Json | null
           created_at: string
           cumulative_score: number | null
+          difficulty: string
           domain: string
+          ended_at: string | null
+          evidence: Json
+          github_context: Json | null
+          hiring_manager_score: number | null
           id: string
           improvements: string[] | null
+          language_violation: boolean
+          lost_points: Json
+          microphone_status: string
           notes: string | null
           overall_score: number | null
           panel_scores: Json | null
+          product_manager_score: number | null
           recommendation: string | null
           role: string
+          screen_share_status: string
+          started_at: string | null
           status: string
           strengths: string[] | null
+          technical_score: number | null
+          termination_reason: string | null
           transcript: string | null
+          turn_away_count: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          behavioral_score?: number | null
+          camera_status?: string
+          cheating_violation?: boolean
           company: string
           competency_scores?: Json | null
           created_at?: string
           cumulative_score?: number | null
+          difficulty?: string
           domain: string
+          ended_at?: string | null
+          evidence?: Json
+          github_context?: Json | null
+          hiring_manager_score?: number | null
           id?: string
           improvements?: string[] | null
+          language_violation?: boolean
+          lost_points?: Json
+          microphone_status?: string
           notes?: string | null
           overall_score?: number | null
           panel_scores?: Json | null
+          product_manager_score?: number | null
           recommendation?: string | null
           role: string
+          screen_share_status?: string
+          started_at?: string | null
           status?: string
           strengths?: string[] | null
+          technical_score?: number | null
+          termination_reason?: string | null
           transcript?: string | null
+          turn_away_count?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          behavioral_score?: number | null
+          camera_status?: string
+          cheating_violation?: boolean
           company?: string
           competency_scores?: Json | null
           created_at?: string
           cumulative_score?: number | null
+          difficulty?: string
           domain?: string
+          ended_at?: string | null
+          evidence?: Json
+          github_context?: Json | null
+          hiring_manager_score?: number | null
           id?: string
           improvements?: string[] | null
+          language_violation?: boolean
+          lost_points?: Json
+          microphone_status?: string
           notes?: string | null
           overall_score?: number | null
           panel_scores?: Json | null
+          product_manager_score?: number | null
           recommendation?: string | null
           role?: string
+          screen_share_status?: string
+          started_at?: string | null
           status?: string
           strengths?: string[] | null
+          technical_score?: number | null
+          termination_reason?: string | null
           transcript?: string | null
+          turn_away_count?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      monitoring_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          event_type: string
+          id: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          event_type: string
+          id?: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          event_type?: string
+          id?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitoring_events_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "interview_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }

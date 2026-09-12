@@ -1,46 +1,81 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { speakOnce } from "@/lib/speech";
+import { recordMonitoringEvent, TURN_AWAY_LIMIT } from "@/lib/interview.functions";
 
-export type IntegrityEvent = { id: number; kind: "look-away" | "tab-switch"; at: string };
+export type IntegrityEvent = { id: number; kind: "look-away" | "tab-switch"; at: string; warning: number };
+
+export { TURN_AWAY_LIMIT };
 
 /**
- * Client-side integrity signals for the interview page:
- *  - look-away detection from the live camera (MediaPipe FaceLandmarker)
+ * Integrity monitoring for the live interview.
+ *  - look-away detection from the camera (MediaPipe FaceLandmarker)
  *  - tab / window switch detection
- * Both trigger a spoken alert once per event, with a cooldown.
- * NOTE (future): a real integrity backend will own this; nothing leaves the browser today.
+ * Every violation is reported to the server, which owns the counter. After the
+ * third warning the server terminates the interview and we fire `onTerminated`.
  */
-export function useProctoring(enabled: boolean) {
+export function useProctoring(enabled: boolean, threadId?: string, onTerminated?: (count: number) => void) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [events, setEvents] = useState<IntegrityEvent[]>([]);
   const [faceTracking, setFaceTracking] = useState<"off" | "on" | "unavailable">("off");
   const [lookingAway, setLookingAway] = useState(false);
+  const [warnings, setWarnings] = useState(0);
+  const terminatedRef = useRef(false);
+  const onTerminatedRef = useRef(onTerminated);
+  onTerminatedRef.current = onTerminated;
 
-  function log(kind: IntegrityEvent["kind"]) {
-    setEvents(e => [{ id: Date.now() + Math.random(), kind, at: new Date().toLocaleTimeString() }, ...e].slice(0, 8));
-  }
+  const report = useCallback(async (kind: IntegrityEvent["kind"], detail: string) => {
+    if (terminatedRef.current) return;
+    let count = 0;
+    let terminated = false;
+    if (threadId) {
+      try {
+        const res = await recordMonitoringEvent({ data: { threadId, type: kind === "look-away" ? "look-away" : "window-blur", detail } });
+        count = res.count;
+        terminated = res.terminated;
+      } catch {
+        // Monitoring must never break the interview itself.
+        count = warnings + 1;
+      }
+    } else {
+      count = warnings + 1;
+    }
+    setWarnings(count);
+    setEvents(e => [{ id: Date.now() + Math.random(), kind, at: new Date().toLocaleTimeString(), warning: count }, ...e].slice(0, 8));
+
+    if (terminated) {
+      terminatedRef.current = true;
+      speakOnce("terminated", "This interview has been ended because of repeated monitoring violations.", 60000);
+      onTerminatedRef.current?.(count);
+    } else {
+      const remaining = Math.max(0, TURN_AWAY_LIMIT - count);
+      speakOnce(
+        `${kind}-${count}`,
+        kind === "look-away"
+          ? `Warning ${count} of ${TURN_AWAY_LIMIT}. Please look at the camera. ${remaining === 1 ? "One more warning will end this interview." : ""}`
+          : `Warning ${count} of ${TURN_AWAY_LIMIT}. Please return to the interview window. ${remaining === 1 ? "One more warning will end this interview." : ""}`,
+        4000,
+      );
+    }
+  }, [threadId, warnings]);
 
   // Tab / window switch
   useEffect(() => {
     if (!enabled) return;
     let away = false;
     const leave = () => {
-      if (away) return;
+      if (away || document.visibilityState === "visible") return;
       away = true;
-      log("tab-switch");
-      speakOnce("tab-switch", "Please return to the interview window.", 8000);
+      void report("tab-switch", "Candidate switched away from the interview window.");
     };
     const back = () => { away = false; };
     const onVisibility = () => (document.hidden ? leave() : back());
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("blur", leave);
     window.addEventListener("focus", back);
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("blur", leave);
       window.removeEventListener("focus", back);
     };
-  }, [enabled]);
+  }, [enabled, report]);
 
   // Camera + face orientation
   useEffect(() => {
@@ -50,6 +85,7 @@ export function useProctoring(enabled: boolean) {
     let raf = 0;
     let landmarker: { detectForVideo: (v: HTMLVideoElement, t: number) => { faceLandmarks?: unknown[] }; close?: () => void } | null = null;
     let awaySince: number | null = null;
+    let lastReport = 0;
 
     (async () => {
       try {
@@ -74,9 +110,7 @@ export function useProctoring(enabled: boolean) {
           const v = videoRef.current;
           if (stopped || !v || v.readyState < 2 || !landmarker) { raf = requestAnimationFrame(tick); return; }
           try {
-            const result = landmarker.detectForVideo(v, performance.now()) as {
-              faceLandmarks?: { x: number; y: number }[][];
-            };
+            const result = landmarker.detectForVideo(v, performance.now()) as { faceLandmarks?: { x: number; y: number }[][] };
             const face = result.faceLandmarks?.[0];
             let away = true;
             if (face) {
@@ -94,7 +128,11 @@ export function useProctoring(enabled: boolean) {
               awaySince ??= now;
               if (now - awaySince > 2500) {
                 setLookingAway(true);
-                if (speakOnce("look-away", "Pay attention.", 15000)) log("look-away");
+                if (now - lastReport > 12000) {
+                  lastReport = now;
+                  awaySince = now;
+                  void report("look-away", "Candidate looked away from the camera.");
+                }
               }
             } else {
               awaySince = null;
@@ -115,7 +153,7 @@ export function useProctoring(enabled: boolean) {
       landmarker?.close?.();
       stream?.getTracks().forEach(t => t.stop());
     };
-  }, [enabled]);
+  }, [enabled, report]);
 
-  return { videoRef, events, faceTracking, lookingAway };
+  return { videoRef, events, faceTracking, lookingAway, warnings, limit: TURN_AWAY_LIMIT };
 }

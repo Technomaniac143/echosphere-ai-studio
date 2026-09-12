@@ -30,6 +30,20 @@ export function speakOnce(key: string, text: string, cooldownMs = 15000): boolea
   }
 }
 
+/** Speaks immediately, cancelling anything currently queued. */
+export function speak(text: string) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window) || !text.trim()) return;
+  try {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    speaking = true;
+    utterance.onend = () => { speaking = false; };
+    utterance.onerror = () => { speaking = false; };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  } catch { speaking = false; }
+}
+
 export function resetSpeech() {
   speaking = false;
   lastSpoken.clear();

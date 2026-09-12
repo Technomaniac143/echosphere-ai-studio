@@ -6,26 +6,34 @@ import {
   Github, GraduationCap, Headphones, LayoutDashboard, LockKeyhole, Menu, MessageSquare,
   Mic, MicOff, MonitorUp, MoreHorizontal, Network, NotebookPen, Pause, Play, Plus,
   Radio, RefreshCw, Route, Send, ShieldCheck, Sparkles, Target, Upload, UserRound,
-  Video, VideoOff, Volume2, WandSparkles, X, Zap,
+  Video, VideoOff, Volume2, WandSparkles, X, Zap, AlertTriangle, Building2, Loader2,
   Aperture, Code2, PenTool, Eye, TrendingUp, PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputBody, PromptInputFooter, PromptInputSubmit, PromptInputTextarea, PromptInputTools } from "@/components/ai-elements/prompt-input";
-import alexImage from "@/assets/interviewer-alex.jpg";
 import candidateImage from "@/assets/candidate-arjun.jpg";
 import { cn } from "@/lib/utils";
 import { useCandidate, requiredProfileFields, type CandidateProfile } from "@/lib/candidate-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { createInterview, getInterview, appendMessage, saveInterviewResults } from "@/lib/interview.functions";
-import { scoreInterview } from "@/lib/scoring.functions";
+import {
+  createInterview, getInterview, appendMessage, saveInterviewResults,
+  terminateInterview, setDeviceStatus, saveNotes,
+} from "@/lib/interview.functions";
+import { scoreInterview, adaptDifficulty, moderateSpeech, CATEGORY_LABELS } from "@/lib/scoring.functions";
+import { analyzeGithubProject } from "@/lib/github.functions";
 import { getRoadmap } from "@/lib/roadmap.functions";
+import {
+  validEmail, validPhone, validGithubRepo, validLinkedin, validUrlOptional,
+  validGraduationYear, required, validateResumeFile, type Validator,
+} from "@/lib/validation";
 import { HeroPanelAnimation } from "@/components/echosphere/hero-animation";
 import { AgentPanel, agents, useAgentRotation } from "@/components/echosphere/agent-panel";
 import { LiveInterviewer, type LiveMessage } from "@/components/echosphere/live-interviewer";
 import { useProctoring } from "@/components/echosphere/use-proctoring";
 import { CameraRecorder } from "@/components/echosphere/camera-recorder";
+import { EchoAssistant, EchoOrb } from "@/components/echosphere/echo-assistant";
 
 const CodeEditorPanel = lazy(() => import("@/components/echosphere/code-editor"));
 const WhiteboardPanel = lazy(() => import("@/components/echosphere/whiteboard"));
@@ -62,34 +70,6 @@ function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boole
   return <div className={cn("mb-4 flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[.18em]", dark ? "text-[#bcb0c8]" : "text-brand")}><span className="h-px w-6 bg-current" />{children}</div>;
 }
 
-function EchoOrb({ mode = "idle", onClick, small = false }: { mode?: EchoMode; onClick?: () => void; small?: boolean }) {
-  return <button onClick={onClick} aria-label="Activate Echo voice assistant" className={cn("echo-pulse relative grid rounded-full bg-brand text-white transition-transform hover:scale-105", small ? "size-11" : "size-16")}>
-    <span className="absolute inset-[5px] rounded-full border border-white/30" />
-    <span className="flex h-full items-center justify-center gap-[3px]">
-      {[.5, .85, 1, .65, .4].map((height, i) => <i key={i} className={cn("w-[2px] rounded-full bg-white", mode !== "idle" && "echo-wave")} style={{ height: `${height * (small ? 16 : 23)}px`, animationDelay: `${i * 90}ms` }} />)}
-    </span>
-  </button>;
-}
-
-function EchoAssistant({ dark = false, hint = "What would you like to work on?" }: { dark?: boolean; hint?: string }) {
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<EchoMode>("idle");
-  const [answer, setAnswer] = useState("");
-  function activate() {
-    setOpen(true); setMode("listening"); setAnswer("");
-    window.setTimeout(() => setMode("thinking"), 1300);
-    window.setTimeout(() => { setMode("speaking"); setAnswer("Your Product Thinking score has the most room to grow. I can start a focused 10-minute practice session."); }, 2400);
-    window.setTimeout(() => setMode("idle"), 5200);
-  }
-  return <div className="fixed bottom-5 right-5 z-50 flex items-end gap-3">
-    {open && <div className={cn("w-[min(360px,calc(100vw-90px))] border p-4 shadow-2xl", dark ? "border-white/15 bg-[#211b27] text-white" : "border-foreground/20 bg-white")}>
-      <div className="mb-3 flex items-start justify-between"><div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Echo assistant</p><p className="mt-1 text-sm font-semibold">{mode === "listening" ? "Listening…" : mode === "thinking" ? "Thinking…" : mode === "speaking" ? "Speaking" : hint}</p></div><button aria-label="Close Echo Assistant" onClick={() => setOpen(false)}><X className="size-4 opacity-60" /></button></div>
-      {answer && <p className={cn("border-l-2 border-highlight pl-3 text-sm leading-6", dark ? "text-white/70" : "text-muted-foreground")}>{answer}</p>}
-      <div className="mt-4 flex flex-wrap gap-2">{["Start interview", "Review report", "Practice weak skill"].map(x => <button onClick={activate} key={x} className={cn("border px-2.5 py-1.5 text-[11px]", dark ? "border-white/15 hover:bg-white/10" : "border-foreground/15 hover:bg-muted")}>{x}</button>)}</div>
-    </div>}
-    <div className="flex flex-col items-center gap-1.5"><EchoOrb small onClick={open ? activate : () => setOpen(true)} mode={mode} /><span className={cn("font-mono text-[9px] uppercase tracking-wider", dark ? "text-white/65" : "text-muted-foreground")}>Hey Echo</span></div>
-  </div>;
-}
 
 const personas = [
   ["Alex", "Technical Interviewer", "A"], ["Maya", "Product Manager", "M"], ["Daniel", "Hiring Manager", "D"], ["Sophia", "Behavioral Interviewer", "S"], ["Jordan", "Customer / Role-play", "J"],
@@ -134,16 +114,44 @@ export function PortalPage() {
 }
 
 
+const CATEGORY_KEYS = ["technical","behavioral","productManager","hiringManager"] as const;
+const CATEGORY_TITLES: Record<typeof CATEGORY_KEYS[number], string> = {
+  technical: "Technical", behavioral: "Behavioral", productManager: "Product Manager", hiringManager: "Hiring Manager",
+};
+
 export function DashboardPage() {
   const { candidate, profileComplete } = useCandidate();
+  const latest = candidate.history[0] as any;
+  const scored = candidate.history.find((h: any) => h.technical != null || h.cumulative > 0) as any;
   return <main className="min-h-screen bg-[#f5f1f8]"><Header/><div className="mx-auto max-w-5xl px-5 py-16 md:px-10">
     <Eyebrow>Candidate workspace</Eyebrow>
-    <h1 className="text-4xl font-semibold tracking-[-.04em] md:text-6xl">Welcome back, {candidate.name.split(" ")[0]}.</h1>
+    <h1 className="text-4xl font-semibold tracking-[-.04em] md:text-6xl">Welcome back, {candidate.name.split(" ")[0] || "there"}.</h1>
     <p className="mt-3 text-muted-foreground">{candidate.email}</p>
     {!profileComplete && <div className={cn(panel,"mt-8 flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-brand p-5")}>
       <p className="text-sm">Complete your profile details before starting an interview.</p>
       <Link to="/profile/edit"><Button size="sm" className={violetButton}>Edit profile</Button></Link>
     </div>}
+
+    <section className="mt-10">
+      <div className="flex items-end justify-between">
+        <div><p className="font-mono text-[10px] uppercase tracking-widest text-brand">Latest interview</p>
+          <h2 className="mt-1 text-2xl font-semibold">{latest ? `${latest.company} · ${latest.role}` : "No interviews yet"}</h2>
+          {latest && <p className="mt-1 text-xs text-muted-foreground">{latest.date} · <span className={cn(latest.status==="terminated"?"text-red-500":latest.status==="completed"?"text-success":"text-muted-foreground")}>{latest.status === "terminated" ? `Terminated (${latest.terminationReason ?? "violation"})` : latest.status === "completed" ? "Completed" : "In progress"}</span></p>}
+        </div>
+        {latest && <Link to="/report" search={{ threadId: latest.id }}><Button size="sm" variant="outline" className={outlineButton}>View report</Button></Link>}
+      </div>
+      {scored
+        ? <div className="mt-5 grid gap-px bg-foreground/10 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="bg-brand p-6 text-white"><p className="font-mono text-[10px] uppercase tracking-widest text-white/70">Overall</p><p className="mt-3 text-5xl font-semibold">{scored.cumulative}</p></div>
+            {CATEGORY_KEYS.map(k => <div key={k} className="bg-card p-6">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{CATEGORY_TITLES[k]}</p>
+              <p className="mt-3 text-4xl font-semibold">{scored[k] ?? "—"}</p>
+              <div className="mt-3 h-1.5 bg-muted"><div className="h-full bg-brand" style={{width:`${scored[k] ?? 0}%`}}/></div>
+            </div>)}
+          </div>
+        : <div className={cn(panel,"mt-5 p-8 text-center text-sm text-muted-foreground")}>Your Technical, Behavioral, Product Manager and Hiring Manager scores will appear here after your first scored interview.</div>}
+    </section>
+
     <div className="mt-10 grid gap-4 sm:grid-cols-2">
       <Link to="/setup" className={cn(panel,"group flex items-center justify-between p-6 hover:border-brand")}><span><span className="font-mono text-[10px] uppercase tracking-widest text-brand">Practice</span><span className="mt-2 block text-xl font-semibold">Start New Mock Interview</span></span><Plus className="text-brand"/></Link>
       <Link to="/profile" className={cn(panel,"group flex items-center justify-between p-6 hover:border-brand")}><span><span className="font-mono text-[10px] uppercase tracking-widest text-brand">Portfolio</span><span className="mt-2 block text-xl font-semibold">View Profile</span></span><UserRound className="text-brand"/></Link>

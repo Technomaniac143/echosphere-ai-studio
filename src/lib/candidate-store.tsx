@@ -22,11 +22,23 @@ export type InterviewRecord = {
   recommendation?: string | undefined;
   panel_scores?: any[] | undefined;
   created_at?: string | undefined;
+  status?: string | undefined;
+  technical?: number | null | undefined;
+  behavioral?: number | null | undefined;
+  productManager?: number | null | undefined;
+  hiringManager?: number | null | undefined;
+  terminationReason?: string | null | undefined;
 };
 
 export type CandidateProfile = {
+  fullName: string;
+  email: string;
+  phone: string;
   resumeName: string;
   github: string;
+  linkedin: string;
+  bestProject: string;
+  experience: string;
   institution: string;
   degree: string;
   department: string;
@@ -38,12 +50,13 @@ export type CandidateProfile = {
 };
 
 export const emptyProfile: CandidateProfile = {
-  resumeName: "", github: "", institution: "", degree: "", department: "",
-  graduationYear: "", certificationName: "", certificationOrg: "", certificationYear: "", certificationUrl: "",
+  fullName: "", email: "", phone: "", resumeName: "", github: "", linkedin: "", bestProject: "", experience: "",
+  institution: "", degree: "", department: "", graduationYear: "",
+  certificationName: "", certificationOrg: "", certificationYear: "", certificationUrl: "",
 };
 
 export const requiredProfileFields: (keyof CandidateProfile)[] = [
-  "resumeName", "github", "institution", "degree", "department", "graduationYear",
+  "fullName", "email", "phone", "resumeName", "github", "institution", "degree", "department", "graduationYear",
 ];
 
 export function isProfileComplete(profile: CandidateProfile) {
@@ -59,22 +72,8 @@ export type CandidateState = {
   targetRole?: string | undefined;
 };
 
-export const defaultCompetencies: CompetencyScore[] = [
-  { name: "Communication", score: 0 },
-  { name: "Technical Depth", score: 0 },
-  { name: "Problem Solving", score: 0 },
-  { name: "Product Thinking", score: 0 },
-  { name: "Leadership", score: 0 },
-  { name: "Adaptability", score: 0 },
-];
-
 const emptyState: CandidateState = {
-  name: "",
-  email: "",
-  photo: null,
-  profile: emptyProfile,
-  history: [],
-  targetRole: undefined,
+  name: "", email: "", photo: null, profile: emptyProfile, history: [], targetRole: undefined,
 };
 
 function dbToState(db: any): CandidateState {
@@ -82,10 +81,16 @@ function dbToState(db: any): CandidateState {
   return {
     name: db.full_name || "",
     email: db.email || "",
-    photo: null,
+    photo: db.photo_url || null,
     profile: {
-      resumeName: db.resume_path ? db.resume_path.split("/").pop() : "",
+      fullName: db.full_name || "",
+      email: db.email || "",
+      phone: db.phone || "",
+      resumeName: db.resume_path ? (String(db.resume_path).split("/").pop() ?? "") : "",
       github: db.github_url || "",
+      linkedin: db.linkedin_url || "",
+      bestProject: db.best_project_url || "",
+      experience: db.experience || "",
       institution: db.institution || "",
       degree: db.degree || "",
       department: db.department || "",
@@ -100,27 +105,31 @@ function dbToState(db: any): CandidateState {
   };
 }
 
-function stateToDb(state: CandidateState): any {
+function profileToDb(p: CandidateProfile): any {
   return {
-    full_name: state.name,
-    email: state.email,
-    github_url: state.profile.github,
-    institution: state.profile.institution,
-    degree: state.profile.degree,
-    department: state.profile.department,
-    graduation_year: state.profile.graduationYear ? state.profile.graduationYear.trim() : null,
-    certifications: state.profile.certificationName
-      ? [{ name: state.profile.certificationName, org: state.profile.certificationOrg, year: state.profile.certificationYear, url: state.profile.certificationUrl }]
+    full_name: p.fullName,
+    email: p.email,
+    phone: p.phone,
+    github_url: p.github,
+    linkedin_url: p.linkedin,
+    best_project_url: p.bestProject,
+    experience: p.experience,
+    institution: p.institution,
+    degree: p.degree,
+    department: p.department,
+    graduation_year: p.graduationYear ? p.graduationYear.trim() : null,
+    certifications: p.certificationName
+      ? [{ name: p.certificationName, org: p.certificationOrg, year: p.certificationYear, url: p.certificationUrl }]
       : [],
-    photo_path: state.photo ? "pending" : null,
-    resume_path: state.profile.resumeName || null,
+    resume_path: p.resumeName || null,
   };
 }
 
 type Ctx = {
   candidate: CandidateState;
   setPhoto: (dataUrl: string | null) => void;
-  setProfile: (profile: CandidateProfile) => void;
+  setProfile: (profile: CandidateProfile) => Promise<{ ok: boolean; error?: string }>;
+  refresh: () => void;
   profileComplete: boolean;
   cumulative: number;
   previousCumulative: number | null;
@@ -132,6 +141,7 @@ const CandidateContext = createContext<Ctx | null>(null);
 export function CandidateProvider({ children }: { children: ReactNode }) {
   const [candidate, setCandidate] = useState<CandidateState>(emptyState);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
   const fetchProfile = useServerFn(getProfile);
   const saveProfile = useServerFn(upsertProfile);
   const savePhoto = useServerFn(uploadPhoto);
@@ -142,17 +152,14 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        if (!cancelled) {
-          setCandidate(emptyState);
-          setLoading(false);
-        }
+        if (!cancelled) { setCandidate(emptyState); setLoading(false); }
         return;
       }
       try {
         const [profile, interviews] = await Promise.all([fetchProfile({ data: undefined }), fetchInterviews({ data: undefined })]);
         if (cancelled) return;
         const base = profile ? dbToState(profile) : emptyState;
-        setCandidate({ ...base, history: interviews ?? [] });
+        setCandidate({ ...base, history: (interviews ?? []) as any });
       } catch (e) {
         console.error("Failed to load candidate data", e);
       } finally {
@@ -163,37 +170,32 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") load();
     });
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, [fetchProfile, fetchInterviews]);
+    return () => { cancelled = true; subscription.unsubscribe(); };
+  }, [fetchProfile, fetchInterviews, tick]);
+
+  const refresh = useCallback(() => setTick(t => t + 1), []);
 
   const setPhoto = useCallback(async (photo: string | null) => {
     setCandidate(c => ({ ...c, photo }));
     if (!photo) return;
     try {
       const result = await savePhoto({ data: { base64: photo, contentType: "image/jpeg" } });
-      if (result?.url) {
-        setCandidate(c => ({ ...c, photo: result.url }));
-      }
+      if (result?.url) setCandidate(c => ({ ...c, photo: result.url }));
     } catch (e) {
       console.error("Failed to upload photo", e);
     }
   }, [savePhoto]);
 
-  const setProfile = useCallback(async (profile: CandidateProfile) => {
-    setCandidate(c => {
-      const next = { ...c, profile };
-      (async () => {
-        try {
-          await saveProfile({ data: stateToDb(next) });
-        } catch (e) {
-          console.error("Failed to save profile", e);
-        }
-      })();
-      return next;
-    });
+  const setProfile = useCallback(async (profile: CandidateProfile): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const saved: any = await saveProfile({ data: profileToDb(profile) });
+      const base = saved ? dbToState(saved) : null;
+      setCandidate(c => (base ? { ...base, history: c.history, photo: base.photo ?? c.photo } : { ...c, profile }));
+      return { ok: true };
+    } catch (e: any) {
+      const message = e?.message?.includes("[") ? "Some details could not be saved. Please check the highlighted fields." : (e?.message ?? "Your profile could not be saved.");
+      return { ok: false, error: message };
+    }
   }, [saveProfile]);
 
   const value = useMemo<Ctx>(() => {
@@ -202,12 +204,13 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
       candidate,
       setPhoto,
       setProfile,
+      refresh,
       profileComplete: isProfileComplete(candidate.profile),
       cumulative: latest?.cumulative ?? 0,
       previousCumulative: candidate.history[1]?.cumulative ?? null,
       loading,
     };
-  }, [candidate, setPhoto, setProfile, loading]);
+  }, [candidate, setPhoto, setProfile, refresh, loading]);
 
   return <CandidateContext.Provider value={value}>{children}</CandidateContext.Provider>;
 }
