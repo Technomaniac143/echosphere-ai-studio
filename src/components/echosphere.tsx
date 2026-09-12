@@ -23,7 +23,7 @@ import {
 } from "@/lib/interview.functions";
 import { scoreInterview, adaptDifficulty, moderateSpeech, CATEGORY_LABELS } from "@/lib/scoring.functions";
 import { analyzeGithubProject } from "@/lib/github.functions";
-import { getRoadmap } from "@/lib/roadmap.functions";
+import { getRoadmap, updateRoadmapStep } from "@/lib/roadmap.functions";
 import {
   validEmail, validPhone, validGithubRepo, validLinkedin, validUrlOptional,
   validGraduationYear, required, validateResumeFile, type Validator,
