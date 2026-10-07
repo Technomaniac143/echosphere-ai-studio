@@ -1,3 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RoadmapPage } from "@/components/echosphere";
-export const Route = createFileRoute("/_authenticated/roadmap")({ head:()=>({meta:[{title:"Improvement Roadmap — EchoSphere"},{name:"description",content:"Your personalized 10-step interview improvement plan with milestones, progress, and weekly targets."},{property:"og:title",content:"Improvement Roadmap — EchoSphere"},{property:"og:description",content:"Your personalized 10-step interview improvement plan with milestones, progress, and weekly targets."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: RoadmapPage });
+export const Route = createFileRoute("/_authenticated/roadmap")({
+  head: () => ({
+    meta: [
+      { title: "Improvement Roadmap — EchoSphere" },
+      {
+        name: "description",
+        content:
+          "Your personalized 10-step interview improvement plan with milestones, progress, and weekly targets.",
+      },
+      { property: "og:title", content: "Improvement Roadmap — EchoSphere" },
+      {
+        property: "og:description",
+        content:
+          "Your personalized 10-step interview improvement plan with milestones, progress, and weekly targets.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: RoadmapPage,
+});

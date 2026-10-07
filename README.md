@@ -2,7 +2,7 @@
 
 ## AI Interview Operating Environment
 
-> **Tagline:** *Where Every Answer Shapes the Next Question*
+> **Tagline:** _Where Every Answer Shapes the Next Question_
 > **Core Architecture:** Voice-First Intelligent Interview System with Dynamic Multi-Persona Orchestration
 
 ---
@@ -13,11 +13,11 @@ EchoSphere is an adaptive AI interview platform where specialized interviewer pe
 
 Voice is the primary interaction layer. An ambient AI assistant provides:
 
-* Interface navigation
-* Contextual workspace control
-* Interview assistance
-* Real-time evidence capture
-* Adaptive persona orchestration
+- Interface navigation
+- Contextual workspace control
+- Interview assistance
+- Real-time evidence capture
+- Adaptive persona orchestration
 
 The system continuously transforms candidate responses into interview context, selects the appropriate interviewer persona, generates the next question, and captures evidence for assessment.
 
@@ -164,11 +164,11 @@ The candidate selects the relevant domain and competency focus.
 
 EchoSphere dynamically proposes:
 
-* Competency weighting
-* Interviewer personas
-* Focus areas
-* Difficulty
-* Interview mode
+- Competency weighting
+- Interviewer personas
+- Focus areas
+- Difficulty
+- Interview mode
 
 ## Step 5 — Confirm
 
@@ -428,10 +428,10 @@ Candidate-created notes.
 
 Supports:
 
-* Architecture diagrams
-* Claims
-* Open threads
-* Competencies
+- Architecture diagrams
+- Claims
+- Open threads
+- Competencies
 
 ### Summary
 
@@ -578,11 +578,11 @@ Traditional controls remain available but secondary.
 
 Every question should be informed by:
 
-* Candidate context
-* Previous answers
-* Competency state
-* Persona perspective
-* Interview progress
+- Candidate context
+- Previous answers
+- Competency state
+- Persona perspective
+- Interview progress
 
 ## Persona Specialization
 

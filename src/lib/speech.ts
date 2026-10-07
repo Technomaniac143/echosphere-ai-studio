@@ -19,8 +19,12 @@ export function speakOnce(key: string, text: string, cooldownMs = 15000): boolea
     utterance.rate = 1;
     utterance.pitch = 1;
     speaking = true;
-    utterance.onend = () => { speaking = false; };
-    utterance.onerror = () => { speaking = false; };
+    utterance.onend = () => {
+      speaking = false;
+    };
+    utterance.onerror = () => {
+      speaking = false;
+    };
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
     return true;
@@ -37,11 +41,17 @@ export function speak(text: string) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1;
     speaking = true;
-    utterance.onend = () => { speaking = false; };
-    utterance.onerror = () => { speaking = false; };
+    utterance.onend = () => {
+      speaking = false;
+    };
+    utterance.onerror = () => {
+      speaking = false;
+    };
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
-  } catch { speaking = false; }
+  } catch {
+    speaking = false;
+  }
 }
 
 export function resetSpeech() {

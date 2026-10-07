@@ -1,3 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { VideoTestPage } from "@/components/echosphere";
-export const Route = createFileRoute("/_authenticated/video-test")({ head:()=>({meta:[{title:"Sample Video Test — EchoSphere"},{name:"description",content:"Record a short sample before your AI interview."},{property:"og:title",content:"Sample Video Test — EchoSphere"},{property:"og:description",content:"Record a short sample before your AI interview."},{property:"og:type",content:"website"},{name:"twitter:card",content:"summary_large_image"}]}), component: VideoTestPage });
+export const Route = createFileRoute("/_authenticated/video-test")({
+  head: () => ({
+    meta: [
+      { title: "Sample Video Test — EchoSphere" },
+      { name: "description", content: "Record a short sample before your AI interview." },
+      { property: "og:title", content: "Sample Video Test — EchoSphere" },
+      { property: "og:description", content: "Record a short sample before your AI interview." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: VideoTestPage,
+});

@@ -163,13 +163,25 @@
 }
 
 @keyframes echo-wave {
-  0%, 100% { transform: scaleY(.35); opacity: .5; }
-  50% { transform: scaleY(1); opacity: 1; }
+  0%,
+  100% {
+    transform: scaleY(0.35);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 @keyframes echo-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand) 28%, transparent); }
-  50% { box-shadow: 0 0 0 12px transparent; }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand) 28%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 12px transparent;
+  }
 }
 
 @utility echo-wave {
@@ -181,16 +193,58 @@
   animation: echo-pulse 2.2s ease-in-out infinite;
 }
 
-@keyframes echo-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes echo-spin-reverse { from { transform: translateX(-50%) rotate(0deg); } to { transform: translateX(-50%) rotate(-360deg); } }
-@keyframes echo-core { 0%, 100% { transform: translate(-50%, -50%) scale(.9); opacity: .65; } 50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } }
+@keyframes echo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes echo-spin-reverse {
+  from {
+    transform: translateX(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateX(-50%) rotate(-360deg);
+  }
+}
+@keyframes echo-core {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+}
 
-@utility echo-orbit { animation: echo-spin 16s linear infinite; }
-@utility echo-orbit-label { animation: echo-spin-reverse 16s linear infinite; }
-@utility echo-orbit-ring { animation: echo-spin 42s linear infinite; }
-@utility echo-orbit-ring-slow { animation: echo-spin 30s linear infinite reverse; }
-@utility echo-core { animation: echo-core 4.5s ease-in-out infinite; }
+@utility echo-orbit {
+  animation: echo-spin 16s linear infinite;
+}
+@utility echo-orbit-label {
+  animation: echo-spin-reverse 16s linear infinite;
+}
+@utility echo-orbit-ring {
+  animation: echo-spin 42s linear infinite;
+}
+@utility echo-orbit-ring-slow {
+  animation: echo-spin 30s linear infinite reverse;
+}
+@utility echo-core {
+  animation: echo-core 4.5s ease-in-out infinite;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .echo-wave, .echo-pulse, .echo-orbit, .echo-orbit-label, .echo-orbit-ring, .echo-orbit-ring-slow, .echo-core { animation: none; }
+  .echo-wave,
+  .echo-pulse,
+  .echo-orbit,
+  .echo-orbit-label,
+  .echo-orbit-ring,
+  .echo-orbit-ring-slow,
+  .echo-core {
+    animation: none;
+  }
 }

@@ -40,7 +40,7 @@ The workspace column becomes a flexible split view with tabs: Conversation / Cod
 
 - Code: real editor with syntax highlighting and a language picker (JS, Python, SQL, Java).
 - Whiteboard: canvas with pen, rectangle, arrow, text, eraser, colour, undo, clear.  
-(Make sure this whiteboard and coe editor is only at the interview session. And the whiteboard is purelly for the candidate to add nodes and make some Architecture).
+  (Make sure this whiteboard and coe editor is only at the interview session. And the whiteboard is purelly for the candidate to add nodes and make some Architecture).
 
 ## 9. Report page: per-competency scores
 
@@ -48,8 +48,8 @@ Each competency (Communication, Technical Depth, Problem Solving, Product Thinki
 
 ## 10. Report page: cumulative score
 
-A large headline gauge at the top of the report showing the overall score, band, and delta vs the previous interview. The same number flows into the home page history cards.  
-  
+A large headline gauge at the top of the report showing the overall score, band, and delta vs the previous interview. The same number flows into the home page history cards.
+
 [DO ALL THE TASKS, BUT NOTE THAT LATER WE WIL BE IMPLEMENTING REAL TIME I/O, REAL DATABASE AND RECORDED DATA, AI DIGITAL HUMANS, VOICE BASED CONVO] - JUST NOTE THEM. DONT IMPLEMENT THESE NOW
 
 ## Technical notes
@@ -60,6 +60,6 @@ A large headline gauge at the top of the report showing the overall score, band,
 - Face detection: `@mediapipe/tasks-vision` FaceLandmarker running client-side, loaded lazily and only on the interview page, with a graceful no-op if the model or camera is unavailable.
 - Code editor: CodeMirror via `@uiw/react-codemirror` (light theme), loaded lazily; both new panels are client-only to avoid server rendering issues.
 - Whiteboard: plain HTML canvas with a small shape/pen tool set — no extra heavy dependency.
-- All scores, history entries, and agent hand-offs remain mock/local data.  
+- All scores, history entries, and agent hand-offs remain mock/local data.
 
 - &nbsp;

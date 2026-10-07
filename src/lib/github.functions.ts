@@ -17,7 +17,10 @@ export type GithubAnalysis = {
   analyzed_at: string;
 };
 
-const GH_HEADERS = { Accept: "application/vnd.github+json", "User-Agent": "EchoSphere-Interview-Platform" };
+const GH_HEADERS = {
+  Accept: "application/vnd.github+json",
+  "User-Agent": "EchoSphere-Interview-Platform",
+};
 
 async function gh(path: string) {
   const res = await fetch(`https://api.github.com${path}`, { headers: GH_HEADERS });
@@ -30,30 +33,49 @@ async function gh(path: string) {
  */
 export const analyzeGithubProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({
-    url: z.string().max(500).refine(v => GITHUB_REPO_RE.test(v.trim()), "Enter a full GitHub repository URL."),
-    threadId: z.string().uuid().optional(),
-  }).parse(input))
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        url: z
+          .string()
+          .max(500)
+          .refine((v) => GITHUB_REPO_RE.test(v.trim()), "Enter a full GitHub repository URL."),
+        threadId: z.string().uuid().optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }): Promise<GithubAnalysis> => {
     const parsed = parseGithubRepo(data.url);
     if (!parsed) throw new Error("That does not look like a GitHub repository link.");
     const { owner, repo } = parsed;
 
     const meta = await gh(`/repos/${owner}/${repo}`);
-    if (meta.status === 404) throw new Error("That repository could not be found. It may be private or the link may be wrong.");
-    if (meta.status === 403) throw new Error("GitHub is rate limiting requests right now. Please try again in a few minutes.");
+    if (meta.status === 404)
+      throw new Error(
+        "That repository could not be found. It may be private or the link may be wrong.",
+      );
+    if (meta.status === 403)
+      throw new Error(
+        "GitHub is rate limiting requests right now. Please try again in a few minutes.",
+      );
     if (!meta.ok) throw new Error("GitHub could not be reached. Please try again.");
 
     const [langRes, treeRes, readmeRes] = await Promise.all([
       gh(`/repos/${owner}/${repo}/languages`),
       gh(`/repos/${owner}/${repo}/git/trees/${meta.body.default_branch}?recursive=1`),
-      fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, { headers: { ...GH_HEADERS, Accept: "application/vnd.github.raw" } })
-        .then(r => (r.ok ? r.text() : "")).catch(() => ""),
+      fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
+        headers: { ...GH_HEADERS, Accept: "application/vnd.github.raw" },
+      })
+        .then((r) => (r.ok ? r.text() : ""))
+        .catch(() => ""),
     ]);
 
     const languages = Object.keys(langRes.body ?? {});
     const files: string[] = Array.isArray(treeRes.body?.tree)
-      ? treeRes.body.tree.filter((t: any) => t.type === "blob").map((t: any) => t.path).slice(0, 400)
+      ? treeRes.body.tree
+          .filter((t: any) => t.type === "blob")
+          .map((t: any) => t.path)
+          .slice(0, 400)
       : [];
     const readme = (readmeRes as string).slice(0, 8000);
 
@@ -122,5 +144,8 @@ export const getGithubAnalysis = createServerFn({ method: "GET" })
       .select("github_url, github_analysis")
       .eq("user_id", context.userId)
       .maybeSingle();
-    return (data ?? null) as { github_url: string | null; github_analysis: GithubAnalysis | null } | null;
+    return (data ?? null) as {
+      github_url: string | null;
+      github_analysis: GithubAnalysis | null;
+    } | null;
   });

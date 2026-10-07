@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getProfile, upsertProfile, uploadPhoto } from "./profile.functions";
 import { listInterviews } from "./interview.functions";
@@ -50,17 +58,38 @@ export type CandidateProfile = {
 };
 
 export const emptyProfile: CandidateProfile = {
-  fullName: "", email: "", phone: "", resumeName: "", github: "", linkedin: "", bestProject: "", experience: "",
-  institution: "", degree: "", department: "", graduationYear: "",
-  certificationName: "", certificationOrg: "", certificationYear: "", certificationUrl: "",
+  fullName: "",
+  email: "",
+  phone: "",
+  resumeName: "",
+  github: "",
+  linkedin: "",
+  bestProject: "",
+  experience: "",
+  institution: "",
+  degree: "",
+  department: "",
+  graduationYear: "",
+  certificationName: "",
+  certificationOrg: "",
+  certificationYear: "",
+  certificationUrl: "",
 };
 
 export const requiredProfileFields: (keyof CandidateProfile)[] = [
-  "fullName", "email", "phone", "resumeName", "github", "institution", "degree", "department", "graduationYear",
+  "fullName",
+  "email",
+  "phone",
+  "resumeName",
+  "github",
+  "institution",
+  "degree",
+  "department",
+  "graduationYear",
 ];
 
 export function isProfileComplete(profile: CandidateProfile) {
-  return requiredProfileFields.every(f => (profile[f] ?? "").trim().length > 0);
+  return requiredProfileFields.every((f) => (profile[f] ?? "").trim().length > 0);
 }
 
 export type CandidateState = {
@@ -73,11 +102,17 @@ export type CandidateState = {
 };
 
 const emptyState: CandidateState = {
-  name: "", email: "", photo: null, profile: emptyProfile, history: [], targetRole: undefined,
+  name: "",
+  email: "",
+  photo: null,
+  profile: emptyProfile,
+  history: [],
+  targetRole: undefined,
 };
 
 function dbToState(db: any): CandidateState {
-  const certs = Array.isArray(db.certifications) && db.certifications.length > 0 ? db.certifications[0] : {};
+  const certs =
+    Array.isArray(db.certifications) && db.certifications.length > 0 ? db.certifications[0] : {};
   return {
     name: db.full_name || "",
     email: db.email || "",
@@ -119,7 +154,14 @@ function profileToDb(p: CandidateProfile): any {
     department: p.department,
     graduation_year: p.graduationYear ? p.graduationYear.trim() : null,
     certifications: p.certificationName
-      ? [{ name: p.certificationName, org: p.certificationOrg, year: p.certificationYear, url: p.certificationUrl }]
+      ? [
+          {
+            name: p.certificationName,
+            org: p.certificationOrg,
+            year: p.certificationYear,
+            url: p.certificationUrl,
+          },
+        ]
       : [],
     resume_path: p.resumeName || null,
   };
@@ -150,53 +192,139 @@ export function CandidateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        if (!cancelled) { setCandidate(emptyState); setLoading(false); }
+      let session = null;
+      try {
+        const res = await supabase.auth.getSession();
+        session = res.data.session;
+      } catch (err) {
+        console.warn(
+          "[CandidateStore] Supabase auth session check failed, using local/demo mode",
+          err,
+        );
+      }
+
+      const isDemo =
+        typeof window !== "undefined" && localStorage.getItem("echosphere_demo_user") === "true";
+
+      if (!session && !isDemo) {
+        if (!cancelled) {
+          setCandidate(emptyState);
+          setLoading(false);
+        }
         return;
       }
+
       try {
-        const [profile, interviews] = await Promise.all([fetchProfile({ data: undefined }), fetchInterviews({ data: undefined })]);
-        if (cancelled) return;
-        const base = profile ? dbToState(profile) : emptyState;
-        setCandidate({ ...base, history: (interviews ?? []) as any });
+        if (session) {
+          const [profile, interviews] = await Promise.all([
+            fetchProfile({ data: undefined }).catch(() => null),
+            fetchInterviews({ data: undefined }).catch(() => []),
+          ]);
+          if (cancelled) return;
+          if (profile) {
+            const base = dbToState(profile);
+            setCandidate({ ...base, history: (interviews ?? []) as any });
+            if (!cancelled) setLoading(false);
+            return;
+          }
+        }
       } catch (e) {
-        console.error("Failed to load candidate data", e);
-      } finally {
-        if (!cancelled) setLoading(false);
+        console.warn("Failed to load candidate data from Supabase, loading fallback state", e);
+      }
+
+      // Fallback state for demo or offline mode
+      if (!cancelled) {
+        const localSaved =
+          typeof window !== "undefined" ? localStorage.getItem("echosphere_candidate_state") : null;
+        if (localSaved) {
+          try {
+            setCandidate(JSON.parse(localSaved));
+          } catch {
+            setCandidate(emptyState);
+          }
+        } else {
+          setCandidate({
+            name: "Candidate",
+            email: "candidate@echosphere.ai",
+            photo: null,
+            profile: {
+              fullName: "Candidate",
+              email: "candidate@echosphere.ai",
+              phone: "+1 555-0199",
+              resumeName: "resume.pdf",
+              github: "github.com/candidate",
+              linkedin: "linkedin.com/in/candidate",
+              bestProject: "EchoSphere AI Studio",
+              experience:
+                "Senior Software Engineer with 5+ years building scalable distributed web platforms.",
+              institution: "Stanford University",
+              degree: "B.S. Computer Science",
+              department: "Computer Science",
+              graduationYear: "2022",
+              certificationName: "AWS Solutions Architect",
+              certificationOrg: "Amazon Web Services",
+              certificationYear: "2023",
+              certificationUrl: "",
+            },
+            history: [],
+            targetRole: "Senior Full Stack Engineer",
+          });
+        }
+        setLoading(false);
       }
     };
     load();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") load();
-    });
-    return () => { cancelled = true; subscription.unsubscribe(); };
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") load();
+      });
+      return () => {
+        cancelled = true;
+        subscription.unsubscribe();
+      };
+    } catch {
+      return () => {
+        cancelled = true;
+      };
+    }
   }, [fetchProfile, fetchInterviews, tick]);
 
-  const refresh = useCallback(() => setTick(t => t + 1), []);
+  const refresh = useCallback(() => setTick((t) => t + 1), []);
 
-  const setPhoto = useCallback(async (photo: string | null) => {
-    setCandidate(c => ({ ...c, photo }));
-    if (!photo) return;
-    try {
-      const result = await savePhoto({ data: { base64: photo, contentType: "image/jpeg" } });
-      if (result?.url) setCandidate(c => ({ ...c, photo: result.url }));
-    } catch (e) {
-      console.error("Failed to upload photo", e);
-    }
-  }, [savePhoto]);
+  const setPhoto = useCallback(
+    async (photo: string | null) => {
+      setCandidate((c) => ({ ...c, photo }));
+      if (!photo) return;
+      try {
+        const result = await savePhoto({ data: { base64: photo, contentType: "image/jpeg" } });
+        if (result?.url) setCandidate((c) => ({ ...c, photo: result.url }));
+      } catch (e) {
+        console.error("Failed to upload photo", e);
+      }
+    },
+    [savePhoto],
+  );
 
-  const setProfile = useCallback(async (profile: CandidateProfile): Promise<{ ok: boolean; error?: string }> => {
-    try {
-      const saved: any = await saveProfile({ data: profileToDb(profile) });
-      const base = saved ? dbToState(saved) : null;
-      setCandidate(c => (base ? { ...base, history: c.history, photo: base.photo ?? c.photo } : { ...c, profile }));
-      return { ok: true };
-    } catch (e: any) {
-      const message = e?.message?.includes("[") ? "Some details could not be saved. Please check the highlighted fields." : (e?.message ?? "Your profile could not be saved.");
-      return { ok: false, error: message };
-    }
-  }, [saveProfile]);
+  const setProfile = useCallback(
+    async (profile: CandidateProfile): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        const saved: any = await saveProfile({ data: profileToDb(profile) });
+        const base = saved ? dbToState(saved) : null;
+        setCandidate((c) =>
+          base ? { ...base, history: c.history, photo: base.photo ?? c.photo } : { ...c, profile },
+        );
+        return { ok: true };
+      } catch (e: any) {
+        const message = e?.message?.includes("[")
+          ? "Some details could not be saved. Please check the highlighted fields."
+          : (e?.message ?? "Your profile could not be saved.");
+        return { ok: false, error: message };
+      }
+    },
+    [saveProfile],
+  );
 
   const value = useMemo<Ctx>(() => {
     const latest = candidate.history[0];

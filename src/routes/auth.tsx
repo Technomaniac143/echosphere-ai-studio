@@ -23,7 +23,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const violetButton = "rounded-none bg-brand px-5 font-semibold text-white shadow-[4px_4px_0_#16121d] hover:bg-brand/90 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#16121d]";
+const violetButton =
+  "rounded-none bg-brand px-5 font-semibold text-white shadow-[4px_4px_0_#16121d] hover:bg-brand/90 hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#16121d]";
 
 function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -80,12 +81,22 @@ function AuthPage() {
             : "Join EchoSphere and start your adaptive interview practice."}
         </p>
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)} className="mt-8 w-full max-w-md">
+        <Tabs
+          value={mode}
+          onValueChange={(v) => setMode(v as typeof mode)}
+          className="mt-8 w-full max-w-md"
+        >
           <TabsList className="grid w-full grid-cols-2 rounded-none border border-foreground/15 bg-white">
-            <TabsTrigger value="signin" className="rounded-none data-[state=active]:bg-brand data-[state=active]:text-white">
+            <TabsTrigger
+              value="signin"
+              className="rounded-none data-[state=active]:bg-brand data-[state=active]:text-white"
+            >
               Sign in
             </TabsTrigger>
-            <TabsTrigger value="signup" className="rounded-none data-[state=active]:bg-brand data-[state=active]:text-white">
+            <TabsTrigger
+              value="signup"
+              className="rounded-none data-[state=active]:bg-brand data-[state=active]:text-white"
+            >
               Sign up
             </TabsTrigger>
           </TabsList>
@@ -128,12 +139,15 @@ function AuthPage() {
       </div>
 
       <div className="hidden lg:flex flex-col justify-center bg-brand p-16 text-white">
-        <p className="font-mono text-xs uppercase tracking-[.2em] text-highlight">Candidate workspace</p>
+        <p className="font-mono text-xs uppercase tracking-[.2em] text-highlight">
+          Candidate workspace
+        </p>
         <h2 className="mt-6 text-4xl font-semibold leading-tight max-w-md">
           A quiet, intelligent space to sharpen how you answer.
         </h2>
         <p className="mt-6 text-white/70 leading-relaxed max-w-md">
-          Practice with a coordinated AI panel, get evidence-backed scores, and build a personalized improvement roadmap.
+          Practice with a coordinated AI panel, get evidence-backed scores, and build a personalized
+          improvement roadmap.
         </p>
       </div>
     </main>
@@ -228,6 +242,29 @@ function AuthForm({
         className={cn(violetButton, "h-12 w-full")}
       >
         {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+      </Button>
+
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-foreground/15" />
+        </div>
+        <span className="relative bg-[#f7f4fb] px-2 text-xs uppercase text-muted-foreground font-mono">
+          Or
+        </span>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("echosphere_demo_user", "true");
+            window.location.href = "/setup";
+          }
+        }}
+        className="h-12 w-full rounded-none border-2 border-brand font-semibold text-brand hover:bg-brand hover:text-white"
+      >
+        ⚡ Continue as Guest Candidate (Instant Demo)
       </Button>
     </form>
   );

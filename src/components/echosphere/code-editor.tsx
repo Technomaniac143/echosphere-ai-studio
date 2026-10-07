@@ -30,8 +30,19 @@ export default function CodeEditorPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-foreground/10 px-3 py-2">
-        {languages.map(l => (
-          <button key={l} onClick={() => setLanguage(l)} className={cn("rounded-full px-3 py-1 text-[11px] font-medium", language === l ? "bg-brand text-white" : "bg-muted text-muted-foreground hover:bg-muted/70")}>{l}</button>
+        {languages.map((l) => (
+          <button
+            key={l}
+            onClick={() => setLanguage(l)}
+            className={cn(
+              "rounded-full px-3 py-1 text-[11px] font-medium",
+              language === l
+                ? "bg-brand text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/70",
+            )}
+          >
+            {l}
+          </button>
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
@@ -39,11 +50,13 @@ export default function CodeEditorPanel() {
           value={values[language]}
           height="340px"
           extensions={extensions}
-          onChange={v => setValues(s => ({ ...s, [language]: v }))}
+          onChange={(v) => setValues((s) => ({ ...s, [language]: v }))}
           basicSetup={{ lineNumbers: true, highlightActiveLine: true, foldGutter: false }}
         />
       </div>
-      <p className="border-t border-foreground/10 px-3 py-2 text-[11px] text-muted-foreground">Scratch editor for technical rounds — nothing is submitted yet.</p>
+      <p className="border-t border-foreground/10 px-3 py-2 text-[11px] text-muted-foreground">
+        Scratch editor for technical rounds — nothing is submitted yet.
+      </p>
     </div>
   );
 }

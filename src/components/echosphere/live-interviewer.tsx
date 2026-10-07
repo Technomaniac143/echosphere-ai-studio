@@ -27,7 +27,15 @@ type Status = "idle" | "connecting" | "live" | "error";
  * Both SDKs are imported lazily so they never run during SSR.
  */
 export function LiveInterviewer({
-  threadId, company, role, domain, candidateName, muted, paused, onTranscript, className,
+  threadId,
+  company,
+  role,
+  domain,
+  candidateName,
+  muted,
+  paused,
+  onTranscript,
+  className,
 }: Props) {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -37,13 +45,22 @@ export function LiveInterviewer({
   const videoId = `anam-video-${threadId}`;
 
   const stop = useCallback(async () => {
-    try { await anamRef.current?.stopStreaming?.(); } catch { /* noop */ }
+    try {
+      await anamRef.current?.stopStreaming?.();
+    } catch {
+      /* noop */
+    }
     anamRef.current = null;
     micStreamRef.current?.getTracks().forEach((t) => t.stop());
     micStreamRef.current = null;
   }, []);
 
-  useEffect(() => () => { void stop(); }, [stop]);
+  useEffect(
+    () => () => {
+      void stop();
+    },
+    [stop],
+  );
 
   async function connect() {
     setStatus("connecting");
@@ -61,7 +78,9 @@ export function LiveInterviewer({
         throw new Error("Microphone access was blocked. Allow it in your browser and try again.");
       }
       micStreamRef.current = micStream;
-      micStream.getAudioTracks().forEach((t) => { t.enabled = !(muted || paused); });
+      micStream.getAudioTracks().forEach((t) => {
+        t.enabled = !(muted || paused);
+      });
 
       // --- Anam: digital human interviewer ---
       const { sessionToken } = await startAnam({
@@ -89,7 +108,11 @@ export function LiveInterviewer({
       });
 
       await anam.streamToVideoElement(videoId, micStream);
-      try { anam.unmuteInputAudio?.(); } catch { /* noop */ }
+      try {
+        anam.unmuteInputAudio?.();
+      } catch {
+        /* noop */
+      }
       setStatus("live");
     } catch (e: any) {
       console.error(e);
@@ -103,10 +126,14 @@ export function LiveInterviewer({
   useEffect(() => {
     const silence = muted || paused;
     try {
-      micStreamRef.current?.getAudioTracks().forEach((t) => { t.enabled = !silence; });
+      micStreamRef.current?.getAudioTracks().forEach((t) => {
+        t.enabled = !silence;
+      });
       if (silence) anamRef.current?.muteInputAudio?.();
       else anamRef.current?.unmuteInputAudio?.();
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }, [muted, paused]);
 
   return (
@@ -115,7 +142,10 @@ export function LiveInterviewer({
         id={videoId}
         autoPlay
         playsInline
-        className={cn("aspect-video w-full bg-[#0d1117] object-cover", status !== "live" && "opacity-0")}
+        className={cn(
+          "aspect-video w-full bg-[#0d1117] object-cover",
+          status !== "live" && "opacity-0",
+        )}
       />
       {status !== "live" && (
         <div className="absolute inset-0 grid place-items-center bg-[#0d1117] px-6 text-center">
@@ -128,8 +158,12 @@ export function LiveInterviewer({
               <p className="text-sm text-white/70">
                 {error ?? "Your AI interviewer will appear and speak with you live."}
               </p>
-              <Button onClick={connect} className="rounded-full bg-brand text-white hover:bg-brand/90">
-                <PhoneCall className="size-4" /> {status === "error" ? "Try again" : "Start live interview"}
+              <Button
+                onClick={connect}
+                className="rounded-full bg-brand text-white hover:bg-brand/90"
+              >
+                <PhoneCall className="size-4" />{" "}
+                {status === "error" ? "Try again" : "Start live interview"}
               </Button>
             </div>
           )}
