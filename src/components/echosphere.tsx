@@ -1590,7 +1590,7 @@ export function SystemCheckPage() {
     setStatuses((p) => [p[0]!, p[1]!, p[2]!, "CHECKING"]);
     const t0 = performance.now();
     try {
-      await fetch(`/favicon.ico?cb=${Date.now()}`, { cache: "no-store" });
+      await fetch(`/favicon.svg?cb=${Date.now()}`, { cache: "no-store" });
       setLatency(Math.max(1, Math.round(performance.now() - t0)));
       setStatuses((p) => [p[0]!, p[1]!, p[2]!, "PASS"]);
     } catch {
